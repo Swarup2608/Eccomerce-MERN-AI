@@ -3,18 +3,24 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
-  "workspaces" : [
+  "workspaces": [
     "backend",
     "storefront",
     "admin"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace storefront\" \"npm run dev --workspace admin\"",
+    "dev": "concurrently -n \"ADMIN,BACKEND,STOREFRONT\" -c \"magenta,blue,green\" \"npm run admin\" \"npm run backend\" \"npm run storefront\"",
+    "admin": "npm run dev --workspace admin",
+    "backend": "npm run dev --workspace backend",
+    "storefront": "npm run dev --workspace storefront",
     "build": "npm run build --workspaces",
     "start": "npm run start --workspaces",
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspace backend",
     "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }

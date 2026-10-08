@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Express } from "express";
 
 import { isMongoReady } from "./config/mongoose.js";
 import { isRedisReady } from "./config/redis.js";
@@ -17,7 +17,7 @@ const defaultDependencies: AppDependencies = {
   isRedisReady,
 };
 
-export function createApp( dependencies: AppDependencies = defaultDependencies) {
+export function createApp( dependencies: AppDependencies = defaultDependencies, registerRoutes?: (app: Express) => void, ) {
   const app = express();
 
   app.use(requestId);
@@ -57,6 +57,8 @@ export function createApp( dependencies: AppDependencies = defaultDependencies) 
       },
     });
   });
+
+  registerRoutes?.(app);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

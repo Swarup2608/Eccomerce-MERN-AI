@@ -124,3 +124,26 @@ test("GET /api/v1/ready returns 503 when Redis is not ready", async () => {
         await stopTestServer(server);
     }
 });
+
+test("unknown routes return a standardized 404 error", async () => {
+    const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+    try {
+        const response = await fetch(`${baseUrl}/api/v1/does-not-exist`);
+
+        assert.equal(response.status, 404);
+
+        const body = await response.json();
+
+        assert.equal(body.success, false);
+        assert.equal(body.error.code, "ROUTE_NOT_FOUND");
+        assert.equal(
+        body.error.message,
+        "Route GET /api/v1/does-not-exist not found",
+        );
+        assert.ok(body.error.requestId);
+
+        assert.ok(response.headers.get("x-request-id"));
+    } finally {
+        await stopTestServer(server);
+    }
+});

@@ -5,6 +5,7 @@ import { isRedisReady } from "./config/redis.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requestId } from "./middleware/requestId.js";
 import { requestLogger } from "./middleware/requestLogger.js";
+import { notFoundHandler } from "./middleware/notFound.js";
 
 export interface AppDependencies {
   isMongoReady: () => boolean;
@@ -57,6 +58,7 @@ export function createApp( dependencies: AppDependencies = defaultDependencies) 
     });
   });
 
+  app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;

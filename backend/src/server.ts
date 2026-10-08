@@ -1,20 +1,49 @@
+import type { Server } from "http";
+
 import app from "./app.js";
+
 import { env } from "./config/env.js";
-import { connectMongoose } from "./config/mongoose.js";
-import { connectRedis } from "./config/redis.js";
+import { connectMongoose, disconnectDb } from "./config/mongoose.js";
+import { connectRedis, redis } from "./config/redis.js";
 
-
-const PORT = env.PORT; 
+let server: Server | undefined;
 
 async function bootstrap() : Promise<void> {
     await connectMongoose();
     await connectRedis();
-    app.listen(PORT,()=>{
-        console.log(`Server is running on port ${PORT}`);
+    server = app.listen(env.PORT,()=>{
+        console.log(`Server is running on port ${env.PORT}`);
     });
 }
 
-bootstrap().catch((error) => {
-    console.error("Failed to bootstrap the server", error);
-    process.exit(1);
+async function shutdown(signal: string): Promise<void> {
+  console.log(`Received ${signal}. Shutting down...`);
+
+  if (server) {
+    await new Promise<void>((resolve) => {
+      server?.close(() => {
+        console.log("HTTP server closed");
+        resolve();
+      });
+    });
+  }
+
+  await disconnectDb();
+  const redisQuitResult = await redis.quit();
+  console.log("Redis connection closed : ", redisQuitResult);
+
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
+
+bootstrap().catch((error: unknown) => {
+  console.error("Failed to start server", error);
+  process.exit(1);
 });

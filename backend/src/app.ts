@@ -1,8 +1,14 @@
 import express from "express";
 import { isMongoReady } from "./config/mongoose.js";
 import { isRedisReady } from "./config/redis.js";
+import { requestId } from "./middleware/requestId.js";
+import { requestLogger } from "./middleware/requestLogger.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+
+app.use(requestId);
+app.use(requestLogger);
 app.use(express.json());
 
 app.get("/api/v1/health",(_req,res)=>{
@@ -25,5 +31,8 @@ app.get("/api/v1/ready",(_req,res)=>{
         }
     });
 });
+
+
+app.use(errorHandler);
 
 export default app;

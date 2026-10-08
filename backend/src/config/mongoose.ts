@@ -14,3 +14,9 @@ export async function connectMongoose() {
 export function isMongoReady() : boolean {
     return mongoose.connection.readyState === 1;
 }
+
+export async function disconnectDb(): Promise<void> {
+  await mongoose.disconnect();
+
+  console.log("MongoDB connection closed");
+}

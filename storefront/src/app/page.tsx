@@ -51,6 +51,7 @@ type Product = {
   background: string;
   tag: string;
 };
+import AuthHeaderActions from "@/components/auth/AuthHeaderActions";
 
 type Filter = "Featured" | "Under ₹1,000";
 
@@ -365,14 +366,7 @@ export default function HomePage() {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => toast("Sign-in will be available soon.")}
-              className="hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-600 sm:flex"
-            >
-              <FiUser size={17} />
-              Sign in
-            </button>
+            <AuthHeaderActions />
           </div>
         </div>
 

@@ -76,3 +76,9 @@ export function verifyEmail(token: string): Promise<ApiSuccessResponse> {
     body: JSON.stringify({ token }),
   });
 }
+
+export function getCurrentUser(): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/me", {
+    method: "GET",
+  });
+}

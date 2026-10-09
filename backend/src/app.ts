@@ -1,4 +1,6 @@
 import express, { type Express } from "express";
+import cors from "cors";
+import helmet from "helmet";
 
 import { isMongoReady } from "./config/mongoose.js";
 import { isRedisReady } from "./config/redis.js";
@@ -6,6 +8,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { requestId } from "./middleware/requestId.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { notFoundHandler } from "./middleware/notFound.js";
+import { env } from "./config/env.js";
 
 export interface AppDependencies {
   isMongoReady: () => boolean;
@@ -22,7 +25,15 @@ export function createApp( dependencies: AppDependencies = defaultDependencies, 
 
   app.use(requestId);
   app.use(requestLogger);
-  app.use(express.json());
+
+  app.use(helmet());
+  app.use(
+    cors({
+      origin: env.CORS_ORIGIN,
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/v1/health", (_req, res) => {
     res.status(200).json({

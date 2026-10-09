@@ -12,3 +12,5 @@ export const verifyEmailController: RequestHandler = async (req, res) => {
     message: "Email verified successfully. You can now log in.",
   });
 };
+
+

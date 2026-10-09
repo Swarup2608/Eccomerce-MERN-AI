@@ -9,6 +9,7 @@ import { requestId } from "./middleware/requestId.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { notFoundHandler } from "./middleware/notFound.js";
 import { env } from "./config/env.js";
+import cookieParser from "cookie-parser";
 
 // Routes
 import authRouter from "./routes/auth.routes.js";
@@ -37,6 +38,7 @@ export function createApp( dependencies: AppDependencies = defaultDependencies, 
     })
   );
   app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
 
   app.get("/api/v1/health", (_req, res) => {
     res.status(200).json({

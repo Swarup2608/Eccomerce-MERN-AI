@@ -32,3 +32,10 @@ export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export const verifyEmailSchema = z.object({ token: z.string().trim().min(1, "Verification token is required"), }).strict();
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+export const loginUserSchema = z.object({
+    identifier: z.string().trim().min(1, "Email or username is required").max(254, "Identifier must be at most 254 characters").transform((val) => val.toLowerCase()),
+    password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password must be at most 128 characters"),
+}).strict();
+
+export type LoginUserInput = z.infer<typeof loginUserSchema>;

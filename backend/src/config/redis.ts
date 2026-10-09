@@ -1,5 +1,6 @@
 import {Redis} from "ioredis";
 import { env } from "./env.js";
+import { logger } from "../utils/logger.js";
 
 export const redis = new Redis(env.REDIS_URL, {
     lazyConnect: true,
@@ -7,11 +8,11 @@ export const redis = new Redis(env.REDIS_URL, {
 
 export async function connectRedis(): Promise<void> {
     await redis.connect();
-    console.log("Redis connected successfully");
+    logger.info("Redis connected successfully");
 }
 
 redis.on("error", (err: Error) => {
-    console.error("Redis connection error:", err);
+    logger.error("Redis connection error: " + err);
 });
 
 export async function pingRedis(): Promise<string> {

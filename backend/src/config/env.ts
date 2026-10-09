@@ -15,7 +15,7 @@ const envSchema = z.object({
 
     CORS_ORIGIN : z.string().url("CORS_ORIGIN must be a valid URL"),
 
-    COOKIE_SECURE : z.enum(["true","false"]).transform((value)=> value ? "true" : "false").default("false")
+    COOKIE_SECURE : z.enum(["true","false"]).transform((value)=> value === "true").default(false)
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

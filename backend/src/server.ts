@@ -1,38 +1,66 @@
-import type { Server } from "http";
+
+import type { Server } from "node:http";
 
 import app from "./app.js";
-
 import { env } from "./config/env.js";
 import { connectMongoose, disconnectDb } from "./config/mongoose.js";
 import { connectRedis, redis } from "./config/redis.js";
+import { logger } from "./utils/logger.js";
 
 let server: Server | undefined;
+let isShuttingDown = false;
 
-async function bootstrap() : Promise<void> {
-    await connectMongoose();
-    await connectRedis();
-    server = app.listen(env.PORT,()=>{
-        console.log(`Server is running on port ${env.PORT}`);
+async function bootstrap(): Promise<void> {
+  await connectMongoose();
+  await connectRedis();
+
+  server = app.listen(env.PORT, () => {
+    logger.info("HTTP server started", {
+      port: env.PORT,
+      environment: env.NODE_ENV,
     });
+  });
 }
 
 async function shutdown(signal: string): Promise<void> {
-  console.log(`Received ${signal}. Shutting down...`);
-
-  if (server) {
-    await new Promise<void>((resolve) => {
-      server?.close(() => {
-        console.log("HTTP server closed");
-        resolve();
-      });
-    });
+  if (isShuttingDown) {
+    return;
   }
 
-  await disconnectDb();
-  const redisQuitResult = await redis.quit();
-  console.log("Redis connection closed : ", redisQuitResult);
+  isShuttingDown = true;
 
-  process.exit(0);
+  logger.info("Shutdown started", { signal });
+
+  try {
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server!.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+
+      logger.info("HTTP server closed");
+    }
+
+    await disconnectDb();
+
+    if (redis.status !== "end") {
+      await redis.quit();
+      logger.info("Redis connection closed");
+    }
+
+    logger.info("Shutdown completed");
+
+    process.exitCode = 0;
+  } catch {
+    logger.error("Graceful shutdown failed");
+    process.exitCode = 1;
+  }
 }
 
 process.on("SIGTERM", () => {
@@ -43,7 +71,7 @@ process.on("SIGINT", () => {
   void shutdown("SIGINT");
 });
 
-bootstrap().catch((error: unknown) => {
-  console.error("Failed to start server", error);
-  process.exit(1);
+bootstrap().catch(() => {
+  logger.error("Server startup failed");
+  process.exitCode = 1;
 });

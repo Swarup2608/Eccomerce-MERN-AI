@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
+import { logger } from "../utils/logger.js";
 
 export async function connectMongoose() {
     try {
         await mongoose.connect(env.MONGO_URI);
-        console.log("Connected to MongoDB");
+        logger.info("Connected to MongoDB");
     } catch (error) {
-        console.error("Failed to connect to MongoDB", error);
+        logger.error("Failed to connect to MongoDB: " + error);
         process.exit(1);
     }
 }
@@ -18,5 +19,5 @@ export function isMongoReady() : boolean {
 export async function disconnectDb(): Promise<void> {
   await mongoose.disconnect();
 
-  console.log("MongoDB connection closed");
+  logger.info("MongoDB connection closed");
 }

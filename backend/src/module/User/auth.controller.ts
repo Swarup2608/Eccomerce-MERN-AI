@@ -1,7 +1,8 @@
 import type { RequestHandler } from "express";
-import { registerUser, loginUser } from "./auth.service.js";
+import { registerUser, loginUser, refreshUserSession } from "./auth.service.js";
 import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
 import { env } from "../../config/env.js";
+import { AppError } from "../../errors/AppError.js";
 
 
 export const registerController: RequestHandler = async (req, res) => {
@@ -42,5 +43,21 @@ export const loginController: RequestHandler = async (req, res) => {
     success: true,
     message: "Login successful.",
     data: { user: result.user },
+  });
+}
+
+export const refreshTokenController: RequestHandler = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if(typeof refreshToken !== "string" || !refreshToken) {
+    throw new AppError("Refresh token is required.", 401, "INVALID_REFRESH_TOKEN");
+  }
+  const result = await refreshUserSession(refreshToken);
+
+  res.cookie("accessToken", result.accessToken, accessCookieOptions);
+  res.cookie("refreshToken", result.refreshToken, refreshCookieOptions);
+
+  res.status(200).json({
+    success: true,
+    message: "Token refreshed successfully."
   });
 }

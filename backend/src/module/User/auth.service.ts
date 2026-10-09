@@ -5,8 +5,9 @@ import { EmailVerification } from "./email-verification.model.js";
 import { sendEmailVerification } from "./email-verification.service.js";
 import { User } from "./user.model.js";
 import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
-import { createSession, revokeSession, type SessionRecord } from "../../utils/session.js";
-import { signAccessToken, signRefreshToken } from "../../utils/jwt.js";
+import { createSession, revokeSession, getSession, rotateSessionRefreshToken, type SessionRecord } from "../../utils/session.js";
+import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../../utils/jwt.js";
+import { randomUUID } from "crypto";
 export interface AuthenticatedUserDto {
   id: string;
   firstName: string;
@@ -115,6 +116,20 @@ export interface LoginUserDependencies {
   updateLastLogin: (userId: string) => Promise<void>;
 }
 
+export interface RefreshTokenDependencies {
+  getSession: typeof getSession;
+  findUser: (
+    userId: string,
+  ) => Promise<{ status: string; emailVerified: boolean } | null>;
+  revokeSession: typeof revokeSession;
+  rotateSessionRefreshToken: typeof rotateSessionRefreshToken;
+  signAccessToken: typeof signAccessToken;
+  signRefreshToken: typeof signRefreshToken;
+  randomUUID: typeof randomUUID;
+  verifyRefreshToken: typeof verifyRefreshToken;
+}
+
+
 const defaultRegisterUserDependencies: RegisterUserDependencies = {
   hashPassword,
   sendEmailVerification,
@@ -139,8 +154,26 @@ const defaultLoginUserDependencies: LoginUserDependencies = {
     },
 };
 
+
+const defaultRefreshTokenDependencies: RefreshTokenDependencies = {
+  getSession,
+  findUser: async (userId) =>
+    User.findById(userId).select("status emailVerified"),
+  revokeSession,
+  rotateSessionRefreshToken,
+  signAccessToken,
+  signRefreshToken,
+  randomUUID,
+  verifyRefreshToken,
+};
+
 export interface LoginResult {
     user: AuthenticatedUserDto;
+    accessToken: string;
+    refreshToken: string;
+}
+
+export interface RefreshTokenResult {
     accessToken: string;
     refreshToken: string;
 }
@@ -193,4 +226,29 @@ export async function loginUser(input: LoginUserInput, dependencies: LoginUserDe
         accessToken,
         refreshToken,
     };
+}
+
+export async function refreshUserSession (token: string, dependencies: RefreshTokenDependencies = defaultRefreshTokenDependencies) : Promise<RefreshTokenResult> {
+    const payload = dependencies.verifyRefreshToken(token);
+    const session = await dependencies.getSession(payload.sid);
+    if(!session || session.userId !== payload.sub || session.refreshTokenId !== payload.jti) {
+        throw new AppError("Invalid or expired session.", 401, "INVALID_REFRESH_TOKEN");
+    }
+    const user = await dependencies.findUser(payload.sub);
+    if(!user || user.status !== "active" || !user.emailVerified) {
+        await dependencies.revokeSession(payload.sid);
+        throw new AppError("This session is no longer valid.", 401, "INVALID_REFRESH_TOKEN");
+    }
+    const nextTokenId = dependencies.randomUUID();
+    const rotated = await dependencies.rotateSessionRefreshToken(payload.sid,payload.jti, nextTokenId);
+
+    if(!rotated){
+        throw new AppError("Invalid or expired refresh token.", 401, "INVALID_REFRESH_TOKEN");
+    }
+
+    return {
+        accessToken: dependencies.signAccessToken(payload.sub, payload.sid),
+        refreshToken: dependencies.signRefreshToken(payload.sub, payload.sid, nextTokenId),
+    }
+
 }

@@ -5,10 +5,12 @@ import assert from "node:assert/strict";
 import mongoose, { Types } from "mongoose";
 
 import { AppError } from "../errors/AppError.js";
-import { registerUser, loginUser, type RegisterUserDependencies, type LoginUserDependencies } from "../module/User/auth.service.js";
+import { registerUser, loginUser, refreshUserSession, type RegisterUserDependencies, type LoginUserDependencies, type RefreshTokenDependencies } from "../module/User/auth.service.js";
 import { EmailVerification } from "../module/User/email-verification.model.js";
 import { User } from "../module/User/user.model.js";
 import { USER_ROLES, USER_STATUSES, type RegisterUserInput, type LoginUserInput } from "../module/User/user.validation.js";
+import type {RefreshTokenPayload} from "../utils/jwt.js";
+import type { SessionRecord } from "../utils/session.js";
 
 const mongoTestUri = process.env.MONGO_TEST_URI;
 
@@ -70,6 +72,37 @@ function createLoginDependencies(overrides: Partial<LoginUserDependencies> = {})
       );
     },
 
+    ...overrides,
+  };
+}
+
+const refreshTestPayload: RefreshTokenPayload = {
+  sub: "test-user-id",
+  sid: "test-session-id",
+  jti: "test-refresh-token-id",
+  type: "refresh",
+};
+
+const refreshTestSession: SessionRecord = {
+  sessionId: "test-session-id",
+  userId: "test-user-id",
+  refreshTokenId: "test-refresh-token-id",
+  createdAt: new Date().toISOString(),
+};
+
+function createRefreshDependencies(overrides: Partial<RefreshTokenDependencies> = {}): RefreshTokenDependencies {
+  return {
+    randomUUID: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    verifyRefreshToken: (_token) => refreshTestPayload,
+    getSession: async (_sessionId) => refreshTestSession,
+    findUser: async (_userId) => ({
+      status: USER_STATUSES.ACTIVE,
+      emailVerified: true,
+    }),
+    revokeSession: async (_sessionId) => {},
+    rotateSessionRefreshToken: async (_sessionId, _currentTokenId, _nextTokenId) => true,
+    signAccessToken: (_userId, _sessionId) => "new-access-token",
+    signRefreshToken: (_userId, _sessionId, _refreshTokenId) => "new-refresh-token",
     ...overrides,
   };
 }
@@ -392,4 +425,89 @@ test("loginUser revokes the session if updating last login fails", async () => {
   );
 
   assert.ok(revokedSessionId);
+});
+
+test("refreshUserSession rotates the refresh token successfully", async () => {
+  let rotationArgs: string[] = [];
+
+  const dependencies = createRefreshDependencies({
+    randomUUID: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    rotateSessionRefreshToken: async (
+      sessionId,
+      currentTokenId,
+      nextTokenId,
+    ) => {
+      rotationArgs = [sessionId, currentTokenId, nextTokenId];
+      return true;
+    },
+  });
+
+  const result = await refreshUserSession(
+    "old-refresh-token",
+    dependencies,
+  );
+
+  assert.deepEqual(result, {
+    accessToken: "new-access-token",
+    refreshToken: "new-refresh-token",
+  });
+
+  assert.deepEqual(rotationArgs, [
+    "test-session-id",
+    "test-refresh-token-id",
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  ]);
+});
+
+test("refreshUserSession rejects a missing session", async () => {
+  const dependencies = createRefreshDependencies({
+    getSession: async (_sessionId) => null,
+  });
+
+  await assert.rejects(
+    refreshUserSession("old-refresh-token", dependencies),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "INVALID_REFRESH_TOKEN",
+  );
+});
+
+test("refreshUserSession revokes a session for an inactive user", async () => {
+  let revokedSessionId: string | undefined;
+
+  const dependencies = createRefreshDependencies({
+    findUser: async (_userId) => ({
+      status: "inactive",
+      emailVerified: true,
+    }),
+    revokeSession: async (sessionId) => {
+      revokedSessionId = sessionId;
+    },
+  });
+
+  await assert.rejects(
+    refreshUserSession("old-refresh-token", dependencies),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "INVALID_REFRESH_TOKEN",
+  );
+
+  assert.equal(revokedSessionId, refreshTestPayload.sid);
+});
+
+test("refreshUserSession rejects a refresh token when rotation fails", async () => {
+  const dependencies = createRefreshDependencies({
+    rotateSessionRefreshToken: async (
+      _sessionId,
+      _currentTokenId,
+      _nextTokenId,
+    ) => false,
+  });
+
+  await assert.rejects(
+    refreshUserSession("old-refresh-token", dependencies),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "INVALID_REFRESH_TOKEN",
+  );
 });

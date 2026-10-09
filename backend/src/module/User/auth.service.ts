@@ -1,13 +1,12 @@
 import { Types } from "mongoose";
 import { AppError } from "../../errors/AppError.js";
-import { hashPassword } from "../../utils/password.js";
+import { hashPassword, verifyPassword } from "../../utils/password.js";
 import { EmailVerification } from "./email-verification.model.js";
 import { sendEmailVerification } from "./email-verification.service.js";
 import { User } from "./user.model.js";
 import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
-import { createSession, revokeSession } from "../../utils/session.js";
+import { createSession, revokeSession, type SessionRecord } from "../../utils/session.js";
 import { signAccessToken, signRefreshToken } from "../../utils/jwt.js";
-import { verifyPassword } from "../../utils/password.js";
 export interface AuthenticatedUserDto {
   id: string;
   firstName: string;
@@ -94,9 +93,50 @@ export interface RegisterUserDependencies {
   sendEmailVerification: typeof sendEmailVerification;
 }
 
+export interface LoginUserDependencies {
+  findUser: (identifier: string) => Promise<{
+    _id: Types.ObjectId;
+    firstName: string;
+    lastName: string;
+    email: string;
+    userName: string;
+    passwordHash: string;
+    phoneNumber?: string;
+    role: string;
+    status: string;
+    emailVerified: boolean;
+    phoneVerified: boolean;
+  } | null>;
+  verifyPassword: typeof verifyPassword;
+  createSession: typeof createSession;
+  revokeSession: typeof revokeSession;
+  signAccessToken: typeof signAccessToken;
+  signRefreshToken: typeof signRefreshToken;
+  updateLastLogin: (userId: string) => Promise<void>;
+}
+
 const defaultRegisterUserDependencies: RegisterUserDependencies = {
   hashPassword,
   sendEmailVerification,
+};
+
+const defaultLoginUserDependencies: LoginUserDependencies = {
+    findUser: async (identifier) => User.findOne({
+        $or: [{ email: identifier }, { userName: identifier }],
+        }).select("+passwordHash"),
+
+    verifyPassword,
+    createSession,
+    revokeSession,
+    signAccessToken,
+    signRefreshToken,
+
+    updateLastLogin: async (userId) => {
+        await User.updateOne(
+        { _id: userId },
+        { $set: { lastLoginAt: new Date() } },
+        );
+    },
 };
 
 export interface LoginResult {
@@ -105,14 +145,12 @@ export interface LoginResult {
     refreshToken: string;
 }
 
-export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
+export async function loginUser(input: LoginUserInput, dependencies: LoginUserDependencies = defaultLoginUserDependencies): Promise<LoginResult> {
     const identifier = input.identifier.toLowerCase(); // could be email or username
-    const user = await User.findOne({
-        $or: [{ email: identifier },{ userName: identifier }]
-    }).select("+passwordHash");
+    const user = await dependencies.findUser(identifier);
 
     // Keep the response identical for unknown users and incorrect passwords.
-    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+    if (!user || !(await dependencies.verifyPassword(input.password, user.passwordHash))) {
         throw new AppError( "Invalid email/username or password.", 401, "INVALID_CREDENTIALS" );
     }
 
@@ -124,18 +162,18 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         throw new AppError("This account is not available for login.", 403, "ACCOUNT_NOT_ACTIVE");
     }
 
-    const session = await createSession(user._id.toString());
+    const session = await dependencies.createSession(user._id.toString());
 
     try {
-        await User.updateOne({_id: user._id}, { $set: { lastLogin: new Date() } });
+        await dependencies.updateLastLogin(user._id.toString());
     } catch (error) {
-        await revokeSession(session.sessionId).catch(() => undefined);
+        await dependencies.revokeSession(session.sessionId).catch(() => undefined);
         throw error;
     }
 
-    const accessToken = signAccessToken(user._id.toString(), session.sessionId);
+    const accessToken = dependencies.signAccessToken(user._id.toString(), session.sessionId);
 
-    const refreshToken = signRefreshToken(user._id.toString(), session.sessionId, session.refreshTokenId);
+    const refreshToken = dependencies.signRefreshToken(user._id.toString(), session.sessionId, session.refreshTokenId);
 
     const safeUser: AuthenticatedUserDto = {
         id: user._id.toString(),

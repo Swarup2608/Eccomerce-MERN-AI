@@ -1,29 +1,16 @@
 
 import { randomUUID } from "node:crypto";
-import {
-  after,
-  before,
-  beforeEach,
-  test,
-} from "node:test";
+import { after, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import mongoose, { Types } from "mongoose";
 
 import { AppError } from "../errors/AppError.js";
-import {
-  registerUser,
-  type RegisterUserDependencies,
-} from "../module/User/auth.service.js";
+import { registerUser, loginUser, type RegisterUserDependencies, type LoginUserDependencies } from "../module/User/auth.service.js";
 import { EmailVerification } from "../module/User/email-verification.model.js";
 import { User } from "../module/User/user.model.js";
-import {
-  USER_ROLES,
-  USER_STATUSES,
-  type RegisterUserInput,
-} from "../module/User/user.validation.js";
+import { USER_ROLES, USER_STATUSES, type RegisterUserInput, type LoginUserInput } from "../module/User/user.validation.js";
 
 const mongoTestUri = process.env.MONGO_TEST_URI;
-console.log(mongoTestUri);
 
 if (!mongoTestUri) {
   throw new Error("MONGO_TEST_URI must be configured to run auth service tests.");
@@ -35,9 +22,7 @@ if (!mongoTestUri.includes("Testing")) {
   );
 }
 
-function buildInput(
-  overrides: Partial<RegisterUserInput> = {},
-): RegisterUserInput {
+function buildInput( overrides: Partial<RegisterUserInput> = {}): RegisterUserInput {
   const id = randomUUID().replaceAll("-", "");
 
   return {
@@ -50,12 +35,41 @@ function buildInput(
   };
 }
 
-function createDependencies(
-  overrides: Partial<RegisterUserDependencies> = {},
-): RegisterUserDependencies {
+function createDependencies( overrides: Partial<RegisterUserDependencies> = {}, ): RegisterUserDependencies {
   return {
     hashPassword: async (password: string) => `hashed:${password}`,
     sendEmailVerification: async (_userId: Types.ObjectId) => {},
+    ...overrides,
+  };
+}
+
+function buildLoginInput(overrides: Partial<LoginUserInput> = {}): LoginUserInput {
+  return {
+    identifier: "test@example.com",
+    password: "test-password-123",
+    ...overrides,
+  };
+}
+
+function createLoginDependencies(overrides: Partial<LoginUserDependencies> = {}): LoginUserDependencies {
+  return {
+    findUser : async (identifier) => {
+      return User.findOne({
+        $or : [{email: identifier}, {userName: identifier}]
+      }).select("+passwordHash");
+    },
+    verifyPassword: async (password, passwordHash) => passwordHash === `hashed:${password}`,
+    createSession: async (userId) => ({ sessionId: randomUUID(), userId, refreshTokenId: randomUUID(), createdAt: new Date().toISOString() }),
+    revokeSession: async (_sessionId) => {},
+    signAccessToken: (_userId, _sessionId) => "test-access-token",
+    signRefreshToken: (_userId, _sessionId, _refreshTokenId) => "test-refresh-token",
+    updateLastLogin: async (userId) => {
+       await User.updateOne(
+        { _id: userId },
+        { $set: { lastLoginAt: new Date() } },
+      );
+    },
+
     ...overrides,
   };
 }
@@ -184,4 +198,198 @@ test("registerUser removes an unverified account when email delivery fails", asy
   const storedUser = await User.findOne({ email: input.email });
 
   assert.equal(storedUser, null);
+});
+
+test("loginUser logs in a verified user with email", async () => {
+  const input = buildInput();
+
+  const registeredUser = await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: true,
+  });
+
+  const result = await loginUser(
+    buildLoginInput({
+      identifier: input.email,
+      password: input.password,
+    }),
+    createLoginDependencies(),
+  );
+
+  assert.equal(result.user.id, registeredUser._id.toString());
+  assert.equal(result.user.email, input.email);
+  assert.equal(result.accessToken, "test-access-token");
+  assert.equal(result.refreshToken, "test-refresh-token");
+  assert.equal("passwordHash" in result.user, false);
+  assert.equal("password" in result.user, false);
+
+  const updatedUser = await User.findById(registeredUser._id);
+  assert.ok(updatedUser?.lastLoginAt);
+});
+
+test("loginUser logs in a verified user with username", async () => {
+  const input = buildInput();
+
+  await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: true,
+  });
+
+  const result = await loginUser(
+    buildLoginInput({
+      identifier: input.userName.toUpperCase(),
+      password: input.password,
+    }),
+    createLoginDependencies(),
+  );
+
+  assert.equal(result.user.userName, input.userName);
+});
+
+test("loginUser rejects an unknown user with INVALID_CREDENTIALS", async () => {
+  await assert.rejects(
+    loginUser(
+      buildLoginInput({
+        identifier: "unknown@example.com",
+      }),
+      createLoginDependencies(),
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 401);
+      assert.equal(error.code, "INVALID_CREDENTIALS");
+      return true;
+    },
+  );
+});
+
+test("loginUser rejects an incorrect password with INVALID_CREDENTIALS", async () => {
+  const input = buildInput();
+
+  await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: true,
+  });
+
+  await assert.rejects(
+    loginUser(
+      buildLoginInput({
+        identifier: input.email,
+        password: "wrong-password",
+      }),
+      createLoginDependencies(),
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 401);
+      assert.equal(error.code, "INVALID_CREDENTIALS");
+      return true;
+    },
+  );
+});
+
+test("loginUser rejects an unverified email", async () => {
+  const input = buildInput();
+
+  await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: false,
+  });
+
+  await assert.rejects(
+    loginUser(
+      buildLoginInput({
+        identifier: input.email,
+        password: input.password,
+      }),
+      createLoginDependencies(),
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 403);
+      assert.equal(error.code, "EMAIL_NOT_VERIFIED");
+      return true;
+    },
+  );
+});
+
+test("loginUser rejects an inactive account", async () => {
+  const input = buildInput();
+
+  await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: true,
+    status: USER_STATUSES.INACTIVE,
+  });
+
+  await assert.rejects(
+    loginUser(
+      buildLoginInput({
+        identifier: input.email,
+        password: input.password,
+      }),
+      createLoginDependencies(),
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.statusCode, 403);
+      assert.equal(error.code, "ACCOUNT_NOT_ACTIVE");
+      return true;
+    },
+  );
+});
+
+test("loginUser revokes the session if updating last login fails", async () => {
+  const input = buildInput();
+
+  await User.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    userName: input.userName,
+    passwordHash: `hashed:${input.password}`,
+    emailVerified: true,
+  });
+
+  let revokedSessionId: string | undefined;
+
+  await assert.rejects(
+    loginUser(
+      buildLoginInput({
+        identifier: input.email,
+        password: input.password,
+      }),
+      createLoginDependencies({
+        updateLastLogin: async () => {
+          throw new Error("Database update failed");
+        },
+        revokeSession: async (sessionId) => {
+          revokedSessionId = sessionId;
+        },
+      }),
+    ),
+    /Database update failed/,
+  );
+
+  assert.ok(revokedSessionId);
 });

@@ -345,3 +345,90 @@ test("validation middleware accepts valid route parameters", async () => {
     await stopTestServer(server);
   }
 });
+
+
+test("POST /api/v1/auth/verify-email rejects a missing token", async () => {
+  const { server, baseUrl } = await startTestServer({
+    isMongoReady: () => true,
+    isRedisReady: () => true,
+  });
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/auth/verify-email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      },
+    );
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+
+    assert.equal(body.success, false);
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.equal(body.error.message, "Request body validation failed");
+    assert.ok(body.error.requestId);
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("POST /api/v1/auth/verify-email rejects an empty token", async () => {
+  const { server, baseUrl } = await startTestServer({
+    isMongoReady: () => true,
+    isRedisReady: () => true,
+  });
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/auth/verify-email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: "   " }),
+      },
+    );
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+
+    assert.equal(body.success, false);
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("POST /api/v1/auth/verify-email rejects unexpected fields", async () => {
+  const { server, baseUrl } = await startTestServer({
+    isMongoReady: () => true,
+    isRedisReady: () => true,
+  });
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/auth/verify-email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: "some-token",
+          email: "user@example.com",
+        }),
+      },
+    );
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+
+    assert.equal(body.success, false);
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+  } finally {
+    await stopTestServer(server);
+  }
+});

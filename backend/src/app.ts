@@ -10,6 +10,9 @@ import { requestLogger } from "./middleware/requestLogger.js";
 import { notFoundHandler } from "./middleware/notFound.js";
 import { env } from "./config/env.js";
 
+// Routes
+import authRouter from "./routes/auth.routes.js";
+
 export interface AppDependencies {
   isMongoReady: () => boolean;
   isRedisReady: () => boolean;
@@ -69,7 +72,9 @@ export function createApp( dependencies: AppDependencies = defaultDependencies, 
     });
   });
 
+  app.use("/api/v1/auth", authRouter);
   registerRoutes?.(app);
+
 
   app.use(notFoundHandler);
   app.use(errorHandler);

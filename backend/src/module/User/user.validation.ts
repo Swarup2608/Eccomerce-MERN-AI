@@ -28,3 +28,7 @@ export const registerUserSchema = z.object({
 }).strict();
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
+
+export const verifyEmailSchema = z.object({ token: z.string().trim().min(1, "Verification token is required"), }).strict();
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

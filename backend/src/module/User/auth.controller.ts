@@ -3,7 +3,8 @@ import { registerUser, loginUser, refreshUserSession } from "./auth.service.js";
 import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
 import { env } from "../../config/env.js";
 import { AppError } from "../../errors/AppError.js";
-
+import { verifyRefreshToken } from "../../utils/jwt.js";
+import { revokeSession } from "../../utils/session.js";
 
 export const registerController: RequestHandler = async (req, res) => {
   const input = req.body as RegisterUserInput;
@@ -59,5 +60,36 @@ export const refreshTokenController: RequestHandler = async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Token refreshed successfully."
+  });
+}
+
+export const logoutController: RequestHandler = async (req, res, next) => {
+  const refreshToken = req.cookies?.refreshToken as string | undefined;
+
+  res.clearCookie("accessToken", accessCookieOptions);
+  res.clearCookie("refreshToken", refreshCookieOptions);
+
+  if(refreshToken) {
+    let sessionId: string | undefined;
+    try{
+      sessionId = verifyRefreshToken(refreshToken).sid;
+    }
+    catch(error) {
+      // Ignore errors during token verification
+    }
+    if(sessionId) {
+      try{
+        await revokeSession(sessionId); 
+      }
+      catch(error) {
+        next(error);
+        return;
+      }
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successful."
   });
 }

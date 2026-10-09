@@ -15,7 +15,18 @@ const envSchema = z.object({
 
     CORS_ORIGIN : z.string().url("CORS_ORIGIN must be a valid URL"),
 
-    COOKIE_SECURE : z.enum(["true","false"]).transform((value)=> value === "true").default(false)
+    COOKIE_SECURE : z.enum(["true","false"]).transform((value)=> value === "true").default(false),
+
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    SMTP_SECURE: z.enum(["true","false"]).transform((value)=> value === "true").default(false),
+    SMTP_USER: z.string().min(1).optional(),
+    SMTP_PASS: z.string().min(1).optional(),
+    EMAIL_FROM: z.string().email().optional(),
+
+    STOREFRONT_URL: z.string().url("STOREFRONT_URL must be a valid URL").default("http://localhost:3000"),
+
+
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

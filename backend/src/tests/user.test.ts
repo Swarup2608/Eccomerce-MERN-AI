@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { User } from "../module/User/user.model.js";
 import { registerUserSchema } from "../module/User/user.validation.js";
+import {EmailVerification} from "../module/User/email-verification.model.js";
 
 const validRegistration = {
   firstName: "Swarup",
@@ -136,3 +137,13 @@ test("phone number has a partial unique index", () => {
         "phoneNumber should have a partial unique index",
     );
 });
+
+test("email verification allows only one active token per user", async () => {
+    const indexes = EmailVerification.schema.indexes();
+    assert.ok( 
+        indexes.some(([fields,options]) => fields.userId === 1 && options.unique === true && options.partialFilterExpression !== undefined),
+        "userId should have a unique partial index for active email verification tokens"
+    );
+    
+});
+    

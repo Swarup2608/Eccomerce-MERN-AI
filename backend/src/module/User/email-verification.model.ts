@@ -1,7 +1,7 @@
-import {Schema,model, models} from "mongoose";
+import {Schema,model,Types} from "mongoose";
 
 export interface IEmailVerification {
-    userId: Schema.Types.ObjectId;
+    userId: Types.ObjectId;
     tokenHash: string;
     expiresAt: Date;
     usedAt: Date | null;
@@ -19,4 +19,6 @@ const emailVerificationSchema = new Schema<IEmailVerification>({
     versionKey: false,
 });
 
-export const EmailVerification =  models.EmailVerification ?? model("EmailVerification", emailVerificationSchema);
+emailVerificationSchema.index({ userId: 1 }, { unique: true, partialFilterExpression: { usedAt: null } });
+
+export const EmailVerification =  model<IEmailVerification>("EmailVerification", emailVerificationSchema);

@@ -65,3 +65,63 @@ export type AdminReviewInput = z.infer<typeof adminReviewSchema>;
 export const vendorIdParamsSchema = z.object({
     vendorId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid vendor ID."),
 });
+
+const objectId = (label: string) => z.string().regex(/^[a-f\d]{24}$/i, `Invalid ${label} ID.`);
+
+export const documentIdParamsSchema = z.object({ documentId: objectId("document") });
+export const addressIdParamsSchema = z.object({ addressId: objectId("address") });
+export const vendorDocumentParamsSchema = z.object({ vendorId: objectId("vendor"), documentId: objectId("document") });
+
+export const vendorAddressUpdateSchema = vendorAddressSchema.partial().refine((value) => Object.keys(value).length > 0, {
+    message: "Provide at least one field to update.",
+});
+
+export type VendorAddressUpdateInput = z.infer<typeof vendorAddressUpdateSchema>;
+
+export const documentReviewSchema = z
+    .object({
+        status: z.enum(["verified", "rejected"]),
+        rejectionReason: z.string().trim().min(5).max(1000).optional(),
+    })
+    .refine((value) => value.status !== "rejected" || Boolean(value.rejectionReason), {
+        message: "A rejection reason is required.",
+        path: ["rejectionReason"],
+    });
+
+export type DocumentReviewInput = z.infer<typeof documentReviewSchema>;
+
+export const listApplicationsQuerySchema = z.object({
+    status: z.enum(["in_progress", "submitted", "approved", "rejected"]).default("submitted"),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type ListApplicationsQuery = z.infer<typeof listApplicationsQuerySchema>;
+
+export const listVendorsQuerySchema = z.object({
+    status: z.enum(["pending", "active", "suspended", "rejected"]).optional(),
+    search: z.string().trim().max(100).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type ListVendorsQuery = z.infer<typeof listVendorsQuerySchema>;
+
+export const vendorStatusChangeSchema = z
+    .object({
+        action: z.enum(["suspend", "reactivate"]),
+        reason: z.string().trim().min(5).max(1000).optional(),
+    })
+    .refine((value) => value.action !== "suspend" || Boolean(value.reason), {
+        message: "A suspension reason is required.",
+        path: ["reason"],
+    });
+
+export type VendorStatusChangeInput = z.infer<typeof vendorStatusChangeSchema>;
+
+export const vendorCommissionSchema = z.object({
+    // null clears the override so the platform default applies.
+    commissionPercent: z.number().min(0).max(100).nullable(),
+});
+
+export type VendorCommissionInput = z.infer<typeof vendorCommissionSchema>;

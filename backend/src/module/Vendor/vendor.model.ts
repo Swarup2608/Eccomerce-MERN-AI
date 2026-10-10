@@ -7,6 +7,9 @@ export interface IVendor {
     businessType: VendorBusinessType;
     status: VendorStatus;
     rejectionReason?: string;
+    // Overrides PLATFORM_COMMISSION_PERCENT for this vendor when set.
+    commissionPercent?: number;
+    suspensionReason?: string;
     // Actor ID: a user ObjectId string, or the Super Admin sentinel.
     reviewedBy?: string;
     reviewedAt?: Date;
@@ -20,6 +23,8 @@ const vendorSchema = new Schema<IVendor>({
     businessType: { type: String, enum: Object.values(VENDOR_BUSINESS_TYPES), required: true },
     status: { type: String, enum: Object.values(VENDOR_STATUSES), default: VENDOR_STATUSES.PENDING, required: true },
     rejectionReason: { type: String, trim: true, maxlength: 1000 },
+    commissionPercent: { type: Number, min: 0, max: 100 },
+    suspensionReason: { type: String, trim: true, maxlength: 1000 },
     reviewedBy: { type: String, trim: true, maxlength: 64 },
     reviewedAt: { type: Date },
 },{

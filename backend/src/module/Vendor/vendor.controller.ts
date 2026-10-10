@@ -1,160 +1,106 @@
-import type { RequestHandler, Response } from "express";
-import { AppError } from "../../errors/AppError.js";
-import { addAddress, addDocument, getMyOnboarding, listApplications, reviewApplication, saveBankAccount, saveStore, startOnboarding, submitOnboarding, updateBusiness } from "./vendor.service.js";
-import type { AdminReviewInput, VendorAddressInput, VendorBankAccountInput, VendorBusinessInput, VendorDocumentInput, VendorStoreInput } from "./vendor.validation.js";
+import { getActor } from "../../utils/actor.js";
+import { handle, param } from "../../utils/http.js";
+import { addAddress, addDocument, changeVendorStatus, deleteAddress, deleteDocument, getDocumentDownloadUrl, getMyOnboarding, getVendorDetail, listApplications, listVendors, reviewApplication, reviewDocument, saveBankAccount, saveStore, setVendorCommission, startOnboarding, submitOnboarding, updateAddress, updateBusiness } from "./vendor.service.js";
+import type { AdminReviewInput, DocumentReviewInput, ListApplicationsQuery, ListVendorsQuery, VendorAddressInput, VendorAddressUpdateInput, VendorBankAccountInput, VendorBusinessInput, VendorCommissionInput, VendorDocumentInput, VendorStatusChangeInput, VendorStoreInput } from "./vendor.validation.js";
 
-// Identity always comes from the verified access token, never from the request.
-function getUserId(res: Response): string {
-  const user = res.locals.user as { userId?: string } | undefined;
+// Vendor-owner onboarding
 
-  if (!user?.userId) {
-    throw new AppError("Authentication is required.", 401, "AUTHENTICATION_REQUIRED");
-  }
+export const startOnboardingController = handle(async (req, res) => ({
+    status: 201,
+    message: "Vendor onboarding started.",
+    data: await startOnboarding(getActor(res).userId, req.body as VendorBusinessInput),
+}));
 
-  return user.userId;
-}
+export const getMyOnboardingController = handle(async (_req, res) => ({
+    message: "Vendor onboarding retrieved.",
+    data: await getMyOnboarding(getActor(res).userId),
+}));
 
-export const startOnboardingController: RequestHandler = async (req, res, next) => {
-  try {
-    const data = await startOnboarding(getUserId(res), req.body as VendorBusinessInput);
+export const updateBusinessController = handle(async (req, res) => ({
+    message: "Business details updated.",
+    data: { vendor: await updateBusiness(getActor(res).userId, req.body as VendorBusinessInput) },
+}));
 
-    return res.status(201).json({
-      success: true,
-      message: "Vendor onboarding started.",
-      data,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const addDocumentController = handle(async (req, res) => ({
+    status: 201,
+    message: "Document saved.",
+    data: { document: await addDocument(getActor(res).userId, req.body as VendorDocumentInput) },
+}));
 
-export const getMyOnboardingController: RequestHandler = async (_req, res, next) => {
-  try {
-    const data = await getMyOnboarding(getUserId(res));
+export const deleteDocumentController = handle(async (req, res) => {
+    await deleteDocument(getActor(res).userId, param(req, "documentId"));
+    return { message: "Document removed." };
+});
 
-    return res.status(200).json({
-      success: true,
-      message: "Vendor onboarding retrieved.",
-      data,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const saveBankAccountController = handle(async (req, res) => ({
+    message: "Bank details saved.",
+    data: { bankAccount: await saveBankAccount(getActor(res).userId, req.body as VendorBankAccountInput) },
+}));
 
-export const updateBusinessController: RequestHandler = async (req, res, next) => {
-  try {
-    const vendor = await updateBusiness(getUserId(res), req.body as VendorBusinessInput);
+export const addAddressController = handle(async (req, res) => ({
+    status: 201,
+    message: "Vendor address saved.",
+    data: { address: await addAddress(getActor(res).userId, req.body as VendorAddressInput) },
+}));
 
-    return res.status(200).json({
-      success: true,
-      message: "Business details updated.",
-      data: { vendor },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const updateAddressController = handle(async (req, res) => ({
+    message: "Vendor address updated.",
+    data: { address: await updateAddress(getActor(res).userId, param(req, "addressId"), req.body as VendorAddressUpdateInput) },
+}));
 
-export const addDocumentController: RequestHandler = async (req, res, next) => {
-  try {
-    const document = await addDocument(getUserId(res), req.body as VendorDocumentInput);
+export const deleteAddressController = handle(async (req, res) => {
+    await deleteAddress(getActor(res).userId, param(req, "addressId"));
+    return { message: "Vendor address removed." };
+});
 
-    return res.status(201).json({
-      success: true,
-      message: "Document metadata saved.",
-      data: { document },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const saveStoreController = handle(async (req, res) => ({
+    message: "Store details saved.",
+    data: { store: await saveStore(getActor(res).userId, req.body as VendorStoreInput) },
+}));
 
-export const saveBankAccountController: RequestHandler = async (req, res, next) => {
-  try {
-    const bankAccount = await saveBankAccount(getUserId(res), req.body as VendorBankAccountInput);
+export const submitOnboardingController = handle(async (_req, res) => ({
+    message: "Vendor application submitted for review.",
+    data: { application: await submitOnboarding(getActor(res).userId) },
+}));
 
-    return res.status(200).json({
-      success: true,
-      message: "Bank details saved.",
-      data: { bankAccount },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+// Admin review
 
-export const addAddressController: RequestHandler = async (req, res, next) => {
-  try {
-    const address = await addAddress(getUserId(res), req.body as VendorAddressInput);
+export const listApplicationsController = handle(async (req) => ({
+    message: "Vendor applications retrieved.",
+    data: await listApplications(req.query as unknown as ListApplicationsQuery),
+}));
 
-    return res.status(201).json({
-      success: true,
-      message: "Vendor address saved.",
-      data: { address },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const reviewApplicationController = handle(async (req, res) => ({
+    message: "Vendor application reviewed.",
+    data: await reviewApplication(param(req, "vendorId"), getActor(res).userId, req.body as AdminReviewInput),
+}));
 
-export const saveStoreController: RequestHandler = async (req, res, next) => {
-  try {
-    const store = await saveStore(getUserId(res), req.body as VendorStoreInput);
+export const listVendorsController = handle(async (req) => ({
+    message: "Vendors retrieved.",
+    data: await listVendors(req.query as unknown as ListVendorsQuery),
+}));
 
-    return res.status(200).json({
-      success: true,
-      message: "Store details saved.",
-      data: { store },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const getVendorDetailController = handle(async (req) => ({
+    message: "Vendor retrieved.",
+    data: await getVendorDetail(param(req, "vendorId")),
+}));
 
-export const submitOnboardingController: RequestHandler = async (_req, res, next) => {
-  try {
-    const application = await submitOnboarding(getUserId(res));
+export const getDocumentDownloadController = handle(async (req) => ({
+    message: "Document link created.",
+    data: await getDocumentDownloadUrl(param(req, "vendorId"), param(req, "documentId")),
+}));
 
-    return res.status(200).json({
-      success: true,
-      message: "Vendor application submitted for review.",
-      data: { application },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const reviewDocumentController = handle(async (req, res) => ({
+    message: "Document reviewed.",
+    data: { document: await reviewDocument(param(req, "vendorId"), param(req, "documentId"), getActor(res).userId, req.body as DocumentReviewInput) },
+}));
 
-export const listApplicationsController: RequestHandler = async (_req, res, next) => {
-  try {
-    const applications = await listApplications();
+export const changeVendorStatusController = handle(async (req, res) => ({
+    message: "Vendor status updated.",
+    data: { vendor: await changeVendorStatus(param(req, "vendorId"), getActor(res).userId, req.body as VendorStatusChangeInput) },
+}));
 
-    return res.status(200).json({
-      success: true,
-      message: "Submitted vendor applications retrieved.",
-      data: { applications },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const reviewApplicationController: RequestHandler = async (req, res, next) => {
-  try {
-    const vendorId = req.params.vendorId;
-    if (typeof vendorId !== "string" || !vendorId.trim()) {
-      return next(new AppError("A valid vendor ID is required.", 400, "VALIDATION_ERROR"));
-    }
-
-    const data = await reviewApplication(vendorId, getUserId(res), req.body as AdminReviewInput);
-
-    return res.status(200).json({
-      success: true,
-      message: "Vendor application reviewed.",
-      data,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
+export const setVendorCommissionController = handle(async (req) => ({
+    message: "Vendor commission updated.",
+    data: { vendor: await setVendorCommission(param(req, "vendorId"), req.body as VendorCommissionInput) },
+}));

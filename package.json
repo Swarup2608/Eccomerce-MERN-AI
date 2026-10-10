@@ -6,17 +6,19 @@
   "workspaces": [
     "backend",
     "storefront",
-    "admin"
+    "admin",
+    "vendor"
   ],
   "scripts": {
-    "dev": "concurrently -n \"ADMIN,BACKEND,STOREFRONT\" -c \"magenta,blue,green\" \"npm run admin\" \"npm run backend\" \"npm run storefront\"",
+    "dev": "concurrently -n \"ADMIN,BACKEND,STOREFRONT,VENDOR\" -c \"magenta,blue,green,yellow\" \"npm run admin\" \"npm run backend\" \"npm run storefront\" \"npm run vendor\"",
     "admin": "npm run dev --workspace admin",
     "backend": "npm run dev --workspace backend",
     "storefront": "npm run dev --workspace storefront",
+    "vendor": "npm run dev --workspace vendor",
     "build": "npm run build --workspaces",
     "start": "npm run start --workspaces",
     "lint": "npm run lint --workspaces",
-    "typecheck": "npm run typecheck --workspaces",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace backend",
     "format": "prettier --write ."
   },

@@ -4,7 +4,8 @@ import { DOCUMENT_MIME_TYPES, VENDOR_DOCUMENT_STATUSES, VENDOR_DOCUMENT_TYPES, t
 export interface IVendorDocument {
     vendorId: Types.ObjectId;
     type: VendorDocumentType;
-    // Key in private object storage, issued by a trusted upload flow. Never a public URL.
+    // Cloudinary public ID of an authenticated (private) asset under
+    // vendors/<vendorId>/documents/. Never a public URL.
     storageKey: string;
     originalFileName: string;
     mimeType: string;

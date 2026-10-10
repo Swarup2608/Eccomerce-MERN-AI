@@ -20,7 +20,7 @@ export function buildVerificationEmailContent(verificationUrl: string): Verifica
     let url: URL;
     try{
         url = new URL(verificationUrl);
-    }catch(error){
+    }catch{
         throw new AppError("Invalid Verification URL", 400, "INVALID_VERIFICATION_URL");
     }
     if(url.protocol !== "http:" && url.protocol !== "https:"){

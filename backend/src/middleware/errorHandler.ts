@@ -3,7 +3,8 @@ import type {ErrorRequestHandler} from "express";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../errors/AppError.js";
 
-export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
+// Express identifies error handlers by their four parameters, so _next must stay.
+export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
     const requestId = res.locals.requestId;
 
     if(error instanceof AppError){

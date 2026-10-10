@@ -74,7 +74,7 @@ export const logoutController: RequestHandler = async (req, res, next) => {
     try{
       sessionId = verifyRefreshToken(refreshToken).sid;
     }
-    catch(error) {
+    catch {
       // Ignore errors during token verification
     }
     if(sessionId) {

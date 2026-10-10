@@ -66,7 +66,7 @@ export async function sendEmailVerification(userId: Types.ObjectId): Promise<voi
     try{
         await sendVerificationEmail(user.email, verificationURL);
     }
-    catch(error){
+    catch{
        await EmailVerification.updateOne(
             {userId, tokenHash, usedAt: null},
             { $set: { usedAt: new Date() } }

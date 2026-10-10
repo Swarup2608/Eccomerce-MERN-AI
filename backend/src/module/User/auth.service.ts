@@ -5,8 +5,8 @@ import { EmailVerification } from "./email-verification.model.js";
 import { sendEmailVerification } from "./email-verification.service.js";
 import { User } from "./user.model.js";
 import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
-import { createSession, revokeSession, getSession, rotateSessionRefreshToken, type SessionRecord } from "../../utils/session.js";
-import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../../utils/jwt.js";
+import { createSession, revokeSession, getSession, rotateSessionRefreshToken } from "../../utils/session.js";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import { randomUUID } from "crypto";
 export interface AuthenticatedUserDto {
   id: string;

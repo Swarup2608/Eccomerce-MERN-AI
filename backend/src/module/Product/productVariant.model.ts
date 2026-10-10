@@ -1,7 +1,7 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export interface IProductVariant {
-    productId: Schema.Types.ObjectId;
+    productId: Types.ObjectId;
     attributes: Map<string, string>;
     variantKey: string;
     isDefault: boolean;

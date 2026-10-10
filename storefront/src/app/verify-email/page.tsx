@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FiArrowRight,
   FiCheckCircle,
@@ -18,37 +19,35 @@ import { verifyEmail } from "@/lib/api/auth";
 type VerificationStatus = "verifying" | "success" | "error";
 
 export default function VerifyEmailPage() {
+    // useSearchParams requires a Suspense boundary for prerendered routes.
+    return (
+        <Suspense fallback={null}>
+            <VerifyEmailContent />
+        </Suspense>
+    );
+}
+
+function VerifyEmailContent() {
+    const searchParams = useSearchParams();
+    const token = searchParams.get("token")?.trim() ?? "";
+
     const [status, setStatus] = useState<VerificationStatus>("verifying");
     const [message, setMessage] = useState(
         "Please wait while we verify your email address.",
     );
-    const [hasToken, setHasToken] = useState<boolean | null>(null);
-    const effectiveStatus: VerificationStatus =
-        hasToken === false ? "error" : status;
-    const effectiveMessage =
-        hasToken === false
-            ? "The verification link is missing its token."
-            : message;
+    const effectiveStatus: VerificationStatus = token ? status : "error";
+    const effectiveMessage = token
+        ? message
+        : "The verification link is missing its token.";
 
     const requestStarted = useRef(false);
 
     useEffect(() => {
-        if (requestStarted.current) {
+        if (!token || requestStarted.current) {
             return;
         }
 
         requestStarted.current = true;
-
-        const rawToken = new URLSearchParams(window.location.search).get("token");
-
-        if (!rawToken?.trim()) {
-            setHasToken(false);
-            return;
-        }
-
-        const token: string = rawToken;
-
-        setHasToken(true);
 
         async function verify() {
             try {
@@ -73,7 +72,7 @@ export default function VerifyEmailPage() {
         }
 
         void verify();
-    }, []);
+    }, [token]);
 
     return (
         <main className="flex min-h-screen flex-col bg-gradient-to-br from-orange-50 via-white to-purple-50">

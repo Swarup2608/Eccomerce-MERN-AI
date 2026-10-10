@@ -1,8 +1,8 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export interface IVendorProductVariant {
-    vendorProductId: Schema.Types.ObjectId;
-    productVariantId: Schema.Types.ObjectId;
+    vendorProductId: Types.ObjectId;
+    productVariantId: Types.ObjectId;
     sellerSku: string;
     price: number;
     compareAtPrice?: number;

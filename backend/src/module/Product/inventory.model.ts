@@ -1,7 +1,7 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export interface IInventory {
-    vendorProductVariantId: Schema.Types.ObjectId;
+    vendorProductVariantId: Types.ObjectId;
     quantity: number;
     reservedQuantity: number;
     createdAt?: Date;

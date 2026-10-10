@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const INVENTORY_TRANSACTION_TYPES = {
     STOCK_IN: "stock_in",
@@ -12,12 +12,12 @@ export const INVENTORY_TRANSACTION_TYPES = {
 export type InventoryTransactionType = (typeof INVENTORY_TRANSACTION_TYPES)[keyof typeof INVENTORY_TRANSACTION_TYPES];
 
 export interface IInventoryTransaction {
-    inventoryId: Schema.Types.ObjectId;
+    inventoryId: Types.ObjectId;
     type: InventoryTransactionType;
     quantity: number;
-    referenceId?: Schema.Types.ObjectId;
+    referenceId?: Types.ObjectId;
     reason?: string;
-    performedBy?: Schema.Types.ObjectId;
+    performedBy?: Types.ObjectId;
     createdAt?: Date;
 }
 

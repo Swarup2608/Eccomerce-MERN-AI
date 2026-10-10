@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   FiArrowRight,
   FiCheck,
@@ -17,11 +18,13 @@ import {
   FiStar,
   FiSun,
   FiTruck,
-  FiUser,
   FiX,
   FiZap,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
+
+import { listProducts, type CatalogProduct } from "@/lib/api/products";
+import { listCategories, type CatalogCategory } from "@/lib/api/categories";
 
 type CategoryName =
   | "All"
@@ -50,6 +53,16 @@ type Product = {
   image: string;
   background: string;
   tag: string;
+};
+
+type LiveProduct = {
+  id: string;
+  name: string;
+  category: Exclude<CategoryName, "All">;
+  description: string;
+  image: string | null;
+  brand?: string;
+  slug: string;
 };
 import AuthHeaderActions from "@/components/auth/AuthHeaderActions";
 
@@ -175,6 +188,64 @@ const products: Product[] = [
 const formatPrice = (price: number): string =>
   `₹${price.toLocaleString("en-IN")}`;
 
+// Temporary: the API only exposes categoryId, so infer a display category from
+// product text until the category API exists.
+function mapCatalogCategory(
+  product: CatalogProduct,
+): Exclude<CategoryName, "All"> {
+  const text =
+    `${product.name} ${product.description} ${product.brand ?? ""}`.toLowerCase();
+
+  if (/shoe|sneaker|boot|sandal|footwear/.test(text)) return "Footwear";
+  if (/beauty|skin|makeup|cosmetic/.test(text)) return "Beauty";
+  if (/phone|laptop|headphone|electronic|camera|watch/.test(text)) {
+    return "Electronics";
+  }
+  if (/furniture|lamp|kitchen|home|decor/.test(text)) return "Home";
+  if (/bag|sunglass|jewel|accessor/.test(text)) return "Accessories";
+  return "Fashion";
+}
+
+// Maps a backend category onto one of the fixed storefront filters. Returns
+// "All" when nothing matches so unknown categories can be skipped.
+function mapCategoryToFilter(category: CatalogCategory): CategoryName {
+  const value = `${category.name} ${category.slug}`.toLowerCase();
+
+  if (value.includes("fashion") || value.includes("clothing")) return "Fashion";
+  if (value.includes("electronic") || value.includes("gadget")) {
+    return "Electronics";
+  }
+  if (
+    value.includes("home") ||
+    value.includes("living") ||
+    value.includes("furniture")
+  ) {
+    return "Home";
+  }
+  if (value.includes("beauty") || value.includes("skin")) return "Beauty";
+  if (value.includes("footwear") || value.includes("shoe")) return "Footwear";
+  if (value.includes("accessor") || value.includes("watch")) {
+    return "Accessories";
+  }
+  return "All";
+}
+
+function toLiveProduct(product: CatalogProduct): LiveProduct {
+  const primaryImage =
+    product.images.find((image) => image.isPrimary) ??
+    [...product.images].sort((a, b) => a.sortOrder - b.sortOrder)[0];
+
+  return {
+    id: product._id,
+    name: product.name,
+    category: mapCatalogCategory(product),
+    description: product.shortDescription || product.description,
+    image: primaryImage?.url ?? null,
+    brand: product.brand,
+    slug: product.slug,
+  };
+}
+
 export default function HomePage() {
   const [search, setSearch] = useState<string>("");
   const [selectedCategory, setSelectedCategory] =
@@ -183,6 +254,115 @@ export default function HomePage() {
   const [cart, setCart] = useState<number[]>([]);
   const [activeFilter, setActiveFilter] = useState<Filter>("Featured");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        const response = await listCategories();
+
+        if (!cancelled) {
+          setCatalogCategories(response.data.categories);
+        }
+      } catch {
+        if (!cancelled) {
+          setCategoriesError("Unable to load categories.");
+        }
+      } finally {
+        if (!cancelled) {
+          setCategoriesLoading(false);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Backend ID for the selected filter; null for "All" or before categories load.
+  const selectedCategoryId = useMemo(() => {
+    if (selectedCategory === "All") {
+      return null;
+    }
+
+    return (
+      catalogCategories.find(
+        (category) => mapCategoryToFilter(category) === selectedCategory,
+      )?._id ?? null
+    );
+  }, [catalogCategories, selectedCategory]);
+
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  // Category the current products were fetched for; undefined until the first
+  // response. Deriving loading from it avoids setting state synchronously in the effect.
+  const [loadedCategoryId, setLoadedCategoryId] = useState<
+    string | null | undefined
+  >(undefined);
+  const catalogLoading = loadedCategoryId !== selectedCategoryId;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchCatalog() {
+      try {
+        const response = await listProducts({
+          page: 1,
+          limit: 20,
+          sortBy: "newest",
+          ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+        });
+
+        if (!cancelled) {
+          setCatalogProducts(response.data.products);
+          setCatalogError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCatalogError(
+            error instanceof Error ? error.message : "Unable to load products.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadedCategoryId(selectedCategoryId);
+        }
+      }
+    }
+
+    void fetchCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategoryId]);
+
+  const liveProducts = useMemo(
+    () => catalogProducts.map(toLiveProduct),
+    [catalogProducts],
+  );
+
+  // Show only the filters backed by a live category. Until categories load (or
+  // if the request fails or returns none) fall back to every demo filter.
+  const availableCategories = useMemo(() => {
+    if (catalogCategories.length === 0) {
+      return categories;
+    }
+
+    const liveNames = new Set(catalogCategories.map(mapCategoryToFilter));
+
+    return categories.filter(
+      (category) => category.name === "All" || liveNames.has(category.name),
+    );
+  }, [catalogCategories]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -393,7 +573,7 @@ export default function HomePage() {
           className="hidden border-t border-slate-100 lg:block"
         >
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-5 px-10">
-            {categories.map((category) => {
+            {availableCategories.map((category) => {
               const CategoryIcon = category.icon;
 
               return (
@@ -437,7 +617,7 @@ export default function HomePage() {
             className="border-t border-slate-100 bg-white p-4 shadow-lg lg:hidden"
           >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {categories.map((category) => {
+              {availableCategories.map((category) => {
                 const CategoryIcon = category.icon;
 
                 return (
@@ -627,6 +807,16 @@ export default function HomePage() {
             <p className="mt-2 text-sm text-slate-500">
               A little something for every part of your life.
             </p>
+
+            {categoriesLoading && (
+              <p className="mt-2 text-xs text-slate-400">
+                Loading categories...
+              </p>
+            )}
+
+            {!categoriesLoading && categoriesError && (
+              <p className="mt-2 text-xs text-slate-400">{categoriesError}</p>
+            )}
           </div>
 
           <button
@@ -639,7 +829,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
-          {categories
+          {availableCategories
             .filter((category) => category.name !== "All")
             .map((category) => {
               const CategoryIcon = category.icon;
@@ -745,8 +935,46 @@ export default function HomePage() {
                   : `${selectedCategory} favourites`}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              {filteredProducts.length} products to discover
+              {filteredProducts.length} demo products to discover
             </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  catalogLoading
+                    ? "animate-pulse bg-amber-400"
+                    : catalogError
+                      ? "bg-rose-500"
+                      : "bg-emerald-500"
+                }`}
+              />
+
+              <span className="font-semibold text-slate-600">
+                {catalogLoading
+                  ? "Connecting to live catalog..."
+                  : catalogError
+                    ? "Live catalog unavailable"
+                    : `${catalogProducts.length} live catalog products`}
+              </span>
+
+              {!catalogLoading &&
+                !catalogError &&
+                catalogProducts.length === 0 && (
+                  <span className="text-slate-400">
+                    No active products yet. Demo products are shown below.
+                  </span>
+                )}
+
+              {catalogError && (
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="font-bold text-fuchsia-600 hover:text-fuchsia-700"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -897,6 +1125,123 @@ export default function HomePage() {
             Explore all products <FiArrowRight size={17} />
           </button>
         </div>
+      </section>
+
+      {/* Live catalog */}
+      <section className="mx-auto max-w-[1360px] px-4 py-8 sm:px-6 lg:px-10">
+        <div className="mb-7">
+          <p className="mb-2 text-xs font-bold tracking-[0.18em] text-fuchsia-600 uppercase">
+            From our marketplace
+          </p>
+
+          <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+            Explore the live catalog
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Products published by our marketplace.
+          </p>
+        </div>
+
+        {catalogLoading ? (
+          <div
+            role="status"
+            className="rounded-3xl border border-slate-100 bg-white px-6 py-12 text-center text-sm text-slate-500"
+          >
+            Loading marketplace products...
+          </div>
+        ) : catalogError ? (
+          <div
+            role="alert"
+            className="rounded-3xl border border-rose-100 bg-white px-6 py-12 text-center"
+          >
+            <p className="font-bold text-slate-800">
+              We couldn&apos;t load the live catalog.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Please check your connection and try again.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-fuchsia-700"
+            >
+              Retry
+            </button>
+          </div>
+        ) : liveProducts.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-fuchsia-50 text-fuchsia-600">
+              <FiShoppingBag size={26} />
+            </span>
+            <h3 className="mt-4 text-lg font-black text-slate-800">
+              Your next favourite is on its way.
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+              There are no published marketplace products yet. Check back soon
+              as sellers add their products.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {liveProducts.map((product, index) => (
+              <article
+                key={product.id}
+                className="product-card group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm sm:rounded-[24px]"
+                style={{ animationDelay: `${index * 70}ms` }}
+              >
+                <div className="relative flex aspect-[4/4.2] items-center justify-center overflow-hidden bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-100">
+                  {product.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading={index > 3 ? "lazy" : "eager"}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                  ) : (
+                    <FiShoppingBag
+                      size={56}
+                      strokeWidth={1.2}
+                      className="text-fuchsia-300"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <span className="absolute top-3 left-3 rounded-lg bg-white/95 px-2 py-1.5 text-[9px] font-extrabold tracking-wider text-slate-800 shadow-sm sm:text-[10px]">
+                    LIVE PRODUCT
+                  </span>
+                </div>
+
+                <div className="p-3 sm:p-5">
+                  <p className="mb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase sm:text-xs">
+                    {product.brand || product.category}
+                  </p>
+
+                  <h3 className="line-clamp-2 min-h-10 text-sm leading-5 font-bold text-slate-800 sm:text-base">
+                    {product.name}
+                  </h3>
+
+                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">
+                    {product.description}
+                  </p>
+
+                  <p className="mt-4 text-xs font-semibold text-slate-500">
+                    Pricing provided by sellers
+                  </p>
+
+                  <Link
+                    href={`/products/${encodeURIComponent(product.slug)}`}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-3 text-xs font-bold text-white transition hover:bg-fuchsia-600 sm:text-sm"
+                  >
+                    View product
+                    <FiArrowRight size={16} />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Closing banner */}

@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test --test-concurrency=1"
+    "test": "node --import tsx --test --test-concurrency=1 \"src/tests/**/*.test.ts\"",
+    "seed:categories": "tsx src/module/Category/category.seed.ts"
   },
   "keywords": [],
   "author": "",

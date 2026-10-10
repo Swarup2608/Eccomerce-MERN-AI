@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const VENDOR_PRODUCT_STATUSES = {
     DRAFT: "draft",
@@ -10,8 +10,8 @@ export const VENDOR_PRODUCT_STATUSES = {
 export type VendorProductStatus = (typeof VENDOR_PRODUCT_STATUSES)[keyof typeof VENDOR_PRODUCT_STATUSES];
 
 export interface IVendorProduct {
-    vendorId: Schema.Types.ObjectId;
-    productId: Schema.Types.ObjectId;
+    vendorId: Types.ObjectId;
+    productId: Types.ObjectId;
     sellerSku?: string;
     status: VendorProductStatus;
     createdAt?: Date;

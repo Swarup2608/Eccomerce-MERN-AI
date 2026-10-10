@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const PRODUCT_STATUSES = {
     DRAFT: "draft",
@@ -14,7 +14,7 @@ export interface IProduct {
     description: string;
     shortDescription?: string;
     brand?: string;
-    categoryId: Schema.Types.ObjectId;
+    categoryId: Types.ObjectId;
     images: {
         url: string;
         alt?: string;

@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
 
 // Routes
 import authRouter from "./routes/auth.routes.js";
+import productRoutes from "./routes/product.routes.js";
 
 export interface AppDependencies {
   isMongoReady: () => boolean;
@@ -75,7 +76,7 @@ export function createApp( dependencies: AppDependencies = defaultDependencies, 
   });
 
   app.use("/api/v1/auth", authRouter);
-  registerRoutes?.(app);
+  app.use("/api/v1/products", productRoutes);
 
 
   app.use(notFoundHandler);

@@ -16,15 +16,39 @@ import { GiSparkles } from "react-icons/gi";
 import toast from "react-hot-toast";
 
 import { ApiError } from "@/lib/api/client";
-import { login } from "@/lib/api/auth";
+import { useAuth } from "@/providers/AuthProvider";
+import { FieldError, fieldClassName } from "@/components/auth/FieldError";
+
+type LoginField = "identifier" | "password";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<LoginField, string>>
+  >({});
+
+  function clearFieldError(field: LoginField) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function errorProps(field: LoginField) {
+    const message = fieldErrors[field];
+    return {
+      "aria-invalid": message ? true : undefined,
+      "aria-describedby": message ? `${field}-error` : undefined,
+    };
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,10 +58,12 @@ export default function LoginPage() {
       return;
     }
 
+    setFieldErrors({});
+
     try {
       setIsSubmitting(true);
 
-      const response = await login({
+      const response = await signIn({
         identifier: identifier.trim(),
         password,
       });
@@ -47,6 +73,12 @@ export default function LoginPage() {
       router.replace("/");
       router.refresh();
     } catch (error: unknown) {
+      if (error instanceof ApiError && Object.keys(error.fieldErrors).length) {
+        setFieldErrors(error.fieldErrors);
+        toast.error("Please fix the highlighted fields.");
+        return;
+      }
+
       const message =
         error instanceof ApiError
           ? error.message
@@ -158,13 +190,18 @@ export default function LoginPage() {
                     type="text"
                     autoComplete="username"
                     value={identifier}
-                    onChange={(event) => setIdentifier(event.target.value)}
+                    onChange={(event) => {
+                      setIdentifier(event.target.value);
+                      clearFieldError("identifier");
+                    }}
                     placeholder="you@example.com"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    {...errorProps("identifier")}
+                    className={`w-full rounded-xl border py-3.5 pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${fieldClassName(!!fieldErrors.identifier)}`}
                   />
                 </div>
+                <FieldError id="identifier-error" message={fieldErrors.identifier} />
               </div>
 
               <div>
@@ -190,11 +227,15 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      clearFieldError("password");
+                    }}
                     placeholder="Enter your password"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-12 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    {...errorProps("password")}
+                    className={`w-full rounded-xl border py-3.5 pl-12 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${fieldClassName(!!fieldErrors.password)}`}
                   />
 
                   <button
@@ -211,6 +252,7 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+                <FieldError id="password-error" message={fieldErrors.password} />
               </div>
 
               <button

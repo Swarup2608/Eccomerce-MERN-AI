@@ -2,13 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useState,type ReactNode } from "react";
 import {ApiError} from "../lib/api/client";
-import {getCurrentUser, logout as logoutApi , refreshSession, type AuthUser} from "../lib/api/auth";
+import {getCurrentUser, login as loginApi, logout as logoutApi , refreshSession, type AuthResponse, type AuthUser, type LoginInput} from "../lib/api/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   refreshUser: () => Promise<void>;
+  signIn: (input: LoginInput) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
 }
 
@@ -66,6 +67,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [refreshUser]);
 
+  const signIn = useCallback(async (input: LoginInput) => {
+    const response = await loginApi(input);
+    setUser(response.data.user);
+    setIsLoading(false);
+    return response;
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await logoutApi();
@@ -79,6 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated: user !== null,
     refreshUser,
+    signIn,
     signOut,
   };
 

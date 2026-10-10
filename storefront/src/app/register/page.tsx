@@ -18,6 +18,15 @@ import toast from "react-hot-toast";
 
 import { ApiError } from "@/lib/api/client";
 import { register } from "@/lib/api/auth";
+import { FieldError, fieldClassName } from "@/components/auth/FieldError";
+
+type RegisterField =
+  | "firstName"
+  | "lastName"
+  | "userName"
+  | "email"
+  | "password"
+  | "confirmPassword";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,19 +39,43 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<RegisterField, string>>
+  >({});
+
+  function clearFieldError(field: RegisterField) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function errorProps(field: RegisterField) {
+    const message = fieldErrors[field];
+    return {
+      "aria-invalid": message ? true : undefined,
+      "aria-describedby": message ? `${field}-error` : undefined,
+    };
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+    if (password.length < 8) {
+      setFieldErrors({
+        password: "Your password must contain at least 8 characters.",
+      });
       return;
     }
 
-    if (password.length < 8) {
-      toast.error("Your password must contain at least 8 characters.");
+    if (password !== confirmPassword) {
+      setFieldErrors({ confirmPassword: "Passwords do not match." });
       return;
     }
+
+    setFieldErrors({});
 
     try {
       setIsSubmitting(true);
@@ -61,6 +94,12 @@ export default function RegisterPage() {
 
       router.push("/login?registered=true");
     } catch (error: unknown) {
+      if (error instanceof ApiError && Object.keys(error.fieldErrors).length) {
+        setFieldErrors(error.fieldErrors);
+        toast.error("Please fix the highlighted fields.");
+        return;
+      }
+
       const message =
         error instanceof ApiError
           ? error.message
@@ -162,12 +201,17 @@ export default function RegisterPage() {
                     name="firstName"
                     autoComplete="given-name"
                     value={firstName}
-                    onChange={(event) => setFirstName(event.target.value)}
+                    onChange={(event) => {
+                      setFirstName(event.target.value);
+                      clearFieldError("firstName");
+                    }}
                     placeholder="First name"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                    {...errorProps("firstName")}
+                    className={`w-full rounded-xl border px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.firstName)}`}
                   />
+                  <FieldError id="firstName-error" message={fieldErrors.firstName} />
                 </div>
 
                 <div>
@@ -182,12 +226,17 @@ export default function RegisterPage() {
                     name="lastName"
                     autoComplete="family-name"
                     value={lastName}
-                    onChange={(event) => setLastName(event.target.value)}
+                    onChange={(event) => {
+                      setLastName(event.target.value);
+                      clearFieldError("lastName");
+                    }}
                     placeholder="Last name"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                    {...errorProps("lastName")}
+                    className={`w-full rounded-xl border px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.lastName)}`}
                   />
+                  <FieldError id="lastName-error" message={fieldErrors.lastName} />
                 </div>
               </div>
 
@@ -209,13 +258,18 @@ export default function RegisterPage() {
                     name="userName"
                     autoComplete="username"
                     value={userName}
-                    onChange={(event) => setUserName(event.target.value)}
+                    onChange={(event) => {
+                      setUserName(event.target.value);
+                      clearFieldError("userName");
+                    }}
                     placeholder="Choose a username"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                    {...errorProps("userName")}
+                    className={`w-full rounded-xl border py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.userName)}`}
                   />
                 </div>
+                <FieldError id="userName-error" message={fieldErrors.userName} />
               </div>
 
               <div>
@@ -237,13 +291,18 @@ export default function RegisterPage() {
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      clearFieldError("email");
+                    }}
                     placeholder="you@example.com"
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                    {...errorProps("email")}
+                    className={`w-full rounded-xl border py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.email)}`}
                   />
                 </div>
+                <FieldError id="email-error" message={fieldErrors.email} />
               </div>
 
               <div>
@@ -265,12 +324,16 @@ export default function RegisterPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      clearFieldError("password");
+                    }}
                     placeholder="Create a password"
                     minLength={8}
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                    {...errorProps("password")}
+                    className={`w-full rounded-xl border py-3 pl-11 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.password)}`}
                   />
                   <button
                     type="button"
@@ -286,6 +349,7 @@ export default function RegisterPage() {
                     )}
                   </button>
                 </div>
+                <FieldError id="password-error" message={fieldErrors.password} />
               </div>
 
               <div>
@@ -301,12 +365,20 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    clearFieldError("confirmPassword");
+                  }}
                   placeholder="Enter your password again"
                   minLength={8}
                   required
                   disabled={isSubmitting}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+                  {...errorProps("confirmPassword")}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:bg-white focus:ring-4 disabled:opacity-60 ${fieldClassName(!!fieldErrors.confirmPassword)}`}
+                />
+                <FieldError
+                  id="confirmPassword-error"
+                  message={fieldErrors.confirmPassword}
                 />
               </div>
 

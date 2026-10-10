@@ -20,6 +20,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
             error: {
                 code: error.code,
                 message: error.message,
+                ...(error.details !== undefined && { details: error.details }),
                 requestId,
             },
         });

@@ -36,7 +36,7 @@ export function createApp( dependencies: AppDependencies = defaultDependencies, 
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: env.CORS_ORIGIN.length === 1 ? env.CORS_ORIGIN[0] : env.CORS_ORIGIN,
       credentials: true,
     })
   );

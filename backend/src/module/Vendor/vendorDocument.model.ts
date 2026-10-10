@@ -10,7 +10,8 @@ export interface IVendorDocument {
     mimeType: string;
     status: VendorDocumentStatus;
     rejectionReason?: string;
-    reviewedBy?: Types.ObjectId;
+    // Actor ID: a user ObjectId string, or the Super Admin sentinel.
+    reviewedBy?: string;
     reviewedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -24,7 +25,7 @@ const vendorDocumentSchema = new Schema<IVendorDocument>({
     mimeType: { type: String, required: true, enum: DOCUMENT_MIME_TYPES },
     status: { type: String, enum: Object.values(VENDOR_DOCUMENT_STATUSES), default: VENDOR_DOCUMENT_STATUSES.PENDING, required: true },
     rejectionReason: { type: String, trim: true, maxlength: 1000 },
-    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedBy: { type: String, trim: true, maxlength: 64 },
     reviewedAt: { type: Date },
 },{
     timestamps: true,

@@ -4,7 +4,9 @@ export const USER_ROLES = {
     USER : "user",
     VENDOR : "vendor",
     ADMIN : "admin",
-    SUPER_ADMIN : "super_admin"
+    SUPER_ADMIN : "super_admin",
+    PROCUREMENT_OFFICER : "procurement_officer",
+    VENDOR_ONBOARDING_REVIEWER : "vendor_onboarding_reviewer"
 } as const;
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
@@ -39,3 +41,10 @@ export const loginUserSchema = z.object({
 }).strict();
 
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
+
+export const superAdminLoginSchema = z.object({
+    email: z.string().trim().email("A valid email is required.").transform((val) => val.toLowerCase()),
+    password: z.string().min(1, "Password is required."),
+});
+
+export type SuperAdminLoginInput = z.infer<typeof superAdminLoginSchema>;

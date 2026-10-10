@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
-import { registerUser, loginUser, refreshUserSession } from "./auth.service.js";
-import type { RegisterUserInput, LoginUserInput } from "./user.validation.js";
+import { registerUser, loginUser, refreshUserSession, loginSuperAdmin } from "./auth.service.js";
+import type { RegisterUserInput, LoginUserInput, SuperAdminLoginInput } from "./user.validation.js";
 import { env } from "../../config/env.js";
 import { AppError } from "../../errors/AppError.js";
 import { verifyRefreshToken } from "../../utils/jwt.js";
@@ -45,11 +45,11 @@ export const loginController: RequestHandler = async (req, res) => {
     message: "Login successful.",
     data: { user: result.user },
   });
-}
+};
 
 export const refreshTokenController: RequestHandler = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
-  if(typeof refreshToken !== "string" || !refreshToken) {
+  if (typeof refreshToken !== "string" || !refreshToken) {
     throw new AppError("Refresh token is required.", 401, "INVALID_REFRESH_TOKEN");
   }
   const result = await refreshUserSession(refreshToken);
@@ -59,9 +59,9 @@ export const refreshTokenController: RequestHandler = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Token refreshed successfully."
+    message: "Token refreshed successfully.",
   });
-}
+};
 
 export const logoutController: RequestHandler = async (req, res, next) => {
   const refreshToken = req.cookies?.refreshToken as string | undefined;
@@ -69,19 +69,17 @@ export const logoutController: RequestHandler = async (req, res, next) => {
   res.clearCookie("accessToken", accessCookieOptions);
   res.clearCookie("refreshToken", refreshCookieOptions);
 
-  if(refreshToken) {
+  if (refreshToken) {
     let sessionId: string | undefined;
-    try{
+    try {
       sessionId = verifyRefreshToken(refreshToken).sid;
-    }
-    catch {
+    } catch {
       // Ignore errors during token verification
     }
-    if(sessionId) {
-      try{
-        await revokeSession(sessionId); 
-      }
-      catch(error) {
+    if (sessionId) {
+      try {
+        await revokeSession(sessionId);
+      } catch (error) {
         next(error);
         return;
       }
@@ -90,6 +88,20 @@ export const logoutController: RequestHandler = async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Logged out successful."
+    message: "Logged out successful.",
   });
-}
+};
+
+export const superAdminLoginController: RequestHandler = async (req, res) => {
+  const input = req.body as SuperAdminLoginInput;
+  const result = await loginSuperAdmin(input);
+
+  res.cookie("accessToken", result.accessToken, accessCookieOptions);
+  res.cookie("refreshToken", result.refreshToken, refreshCookieOptions);
+
+  res.status(200).json({
+    success: true,
+    message: "Super Admin login successful.",
+    data: { user: result.user },
+  });
+};

@@ -7,7 +7,8 @@ export interface IVendor {
     businessType: VendorBusinessType;
     status: VendorStatus;
     rejectionReason?: string;
-    reviewedBy?: Types.ObjectId;
+    // Actor ID: a user ObjectId string, or the Super Admin sentinel.
+    reviewedBy?: string;
     reviewedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -19,7 +20,7 @@ const vendorSchema = new Schema<IVendor>({
     businessType: { type: String, enum: Object.values(VENDOR_BUSINESS_TYPES), required: true },
     status: { type: String, enum: Object.values(VENDOR_STATUSES), default: VENDOR_STATUSES.PENDING, required: true },
     rejectionReason: { type: String, trim: true, maxlength: 1000 },
-    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedBy: { type: String, trim: true, maxlength: 64 },
     reviewedAt: { type: Date },
 },{
     timestamps: true,

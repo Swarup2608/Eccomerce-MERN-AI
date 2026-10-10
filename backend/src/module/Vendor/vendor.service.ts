@@ -198,9 +198,10 @@ export async function listApplications() {
         .lean();
 }
 
-export async function reviewApplication(vendorId: string, adminUserId: string, input: AdminReviewInput) {
+// reviewerId is an actor ID: a user ObjectId string, or the Super Admin sentinel,
+// which is not an ObjectId and must not be converted to one.
+export async function reviewApplication(vendorId: string, reviewerId: string, input: AdminReviewInput) {
     const vendorObjectId = toObjectId(vendorId);
-    const adminObjectId = toObjectId(adminUserId);
 
     const vendor = await Vendor.findById(vendorObjectId).select("userId").lean();
 
@@ -208,7 +209,7 @@ export async function reviewApplication(vendorId: string, adminUserId: string, i
         throw new AppError("Vendor not found.", 404, "VENDOR_NOT_FOUND");
     }
 
-    if (vendor.userId.equals(adminObjectId)) {
+    if (vendor.userId.toString() === reviewerId) {
         throw new AppError("You cannot review your own vendor application.", 403, "SELF_REVIEW_FORBIDDEN");
     }
 
@@ -225,8 +226,8 @@ export async function reviewApplication(vendorId: string, adminUserId: string, i
             const application = await VendorOnboarding.findOneAndUpdate(
                 { vendorId: vendorObjectId, status: ONBOARDING_STATUSES.SUBMITTED },
                 approved
-                    ? { $set: { status: ONBOARDING_STATUSES.APPROVED, reviewedBy: adminObjectId, reviewedAt }, $unset: { rejectionReason: 1 } }
-                    : { $set: { status: ONBOARDING_STATUSES.REJECTED, reviewedBy: adminObjectId, reviewedAt, rejectionReason: input.rejectionReason } },
+                    ? { $set: { status: ONBOARDING_STATUSES.APPROVED, reviewedBy: reviewerId, reviewedAt }, $unset: { rejectionReason: 1 } }
+                    : { $set: { status: ONBOARDING_STATUSES.REJECTED, reviewedBy: reviewerId, reviewedAt, rejectionReason: input.rejectionReason } },
                 { returnDocument: "after", session },
             );
 
@@ -237,8 +238,8 @@ export async function reviewApplication(vendorId: string, adminUserId: string, i
             const updatedVendor = await Vendor.findByIdAndUpdate(
                 vendorObjectId,
                 approved
-                    ? { $set: { status: VENDOR_STATUSES.ACTIVE, reviewedBy: adminObjectId, reviewedAt }, $unset: { rejectionReason: 1 } }
-                    : { $set: { status: VENDOR_STATUSES.REJECTED, reviewedBy: adminObjectId, reviewedAt, rejectionReason: input.rejectionReason } },
+                    ? { $set: { status: VENDOR_STATUSES.ACTIVE, reviewedBy: reviewerId, reviewedAt }, $unset: { rejectionReason: 1 } }
+                    : { $set: { status: VENDOR_STATUSES.REJECTED, reviewedBy: reviewerId, reviewedAt, rejectionReason: input.rejectionReason } },
                 { returnDocument: "after", session },
             );
 

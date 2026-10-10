@@ -7,7 +7,8 @@ export interface IVendorOnboarding {
     currentStep: OnboardingStep;
     submittedAt?: Date;
     reviewedAt?: Date;
-    reviewedBy?: Types.ObjectId;
+    // Actor ID: a user ObjectId string, or the Super Admin sentinel.
+    reviewedBy?: string;
     rejectionReason?: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -19,7 +20,7 @@ const vendorOnboardingSchema = new Schema<IVendorOnboarding>({
     currentStep: { type: String, enum: Object.values(ONBOARDING_STEPS), default: ONBOARDING_STEPS.BUSINESS_DETAILS, required: true },
     submittedAt: { type: Date },
     reviewedAt: { type: Date },
-    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedBy: { type: String, trim: true, maxlength: 64 },
     rejectionReason: { type: String, trim: true, maxlength: 1000 },
 },{
     timestamps: true,

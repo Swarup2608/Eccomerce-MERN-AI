@@ -51,7 +51,6 @@ const productSchema = new Schema<IProduct>({
     versionKey: false,
 });
 
-productSchema.index({ slug: 1 }, { unique: true });
 productSchema.index({ name: "text", description: "text" });
 productSchema.index({ categoryId: 1, status: 1 });
 productSchema.index({ brand: 1, status: 1 });

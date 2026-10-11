@@ -2,26 +2,35 @@ import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { after, before, describe, it } from "node:test";
+import { Redis } from "ioredis";
 import { createApp } from "../app.js";
 import { createLogger } from "../lib/logger.js";
 import { MemoryRateLimitStore, clientKey } from "../middleware/rate-limit.js";
+import { scopePolicies } from "../modules/auth/auth.policy.js";
+import { AuthService } from "../modules/auth/auth.service.js";
+import { signAccessToken } from "../utils/tokens.js";
 
 const ALLOWED_ORIGIN = "http://localhost:3000";
-const RATE_LIMIT_MAX = 25;
+const RATE_LIMIT_MAX = 40;
+const SECRETS = { user: "u".repeat(48), admin: "a".repeat(48) };
 
 let server: Server;
 let baseUrl: string;
 let redisUp = true;
+// Never connects: these tests only exercise paths that are rejected before any Redis call.
+const redis = new Redis({ lazyConnect: true, enableOfflineQueue: false });
 
 before(async () => {
+  const policies = scopePolicies(false);
   const app = createApp({
-    config: { corsOrigins: [ALLOWED_ORIGIN], trustProxy: 0, rateLimit: { windowMs: 60_000, max: RATE_LIMIT_MAX } },
+    config: { corsOrigins: [ALLOWED_ORIGIN], trustProxy: 0, rateLimit: { windowMs: 60_000, max: RATE_LIMIT_MAX }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false } },
     logger: createLogger("error"),
     rateLimitStore: new MemoryRateLimitStore(),
     healthChecks: {
       mongo: () => Promise.resolve(),
       redis: () => (redisUp ? Promise.resolve() : Promise.reject(new Error("down"))),
     },
+    authService: new AuthService(redis, policies, SECRETS, createLogger("error")),
   });
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));
@@ -29,6 +38,7 @@ before(async () => {
 });
 
 after(async () => {
+  redis.disconnect();
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
@@ -117,6 +127,44 @@ describe("routing and health", () => {
     redisUp = true;
     const up = await fetch(`${baseUrl}/health/ready`);
     assert.equal(up.status, 200);
+  });
+});
+
+describe("auth guards", () => {
+  it("rejects /me without an access cookie", async () => {
+    const user = await fetch(`${baseUrl}/api/v1/auth/me`);
+    const admin = await fetch(`${baseUrl}/api/v1/admin/auth/me`);
+    assert.equal(user.status, 401);
+    assert.equal(admin.status, 401);
+  });
+
+  it("rejects a user token presented as an admin token", async () => {
+    const token = signAccessToken({ userId: "u1", role: "user", sessionId: "s1", scope: "user" }, SECRETS.user, 60);
+    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `adm_access=${token}` } });
+    assert.equal(res.status, 401);
+  });
+
+  it("rejects a forged admin token signed with the wrong secret", async () => {
+    const token = signAccessToken({ userId: "u1", role: "admin", sessionId: "s1", scope: "admin" }, SECRETS.user, 60);
+    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `adm_access=${token}` } });
+    assert.equal(res.status, 401);
+  });
+
+  it("rejects registration that tries to set its own role", async () => {
+    const res = await postJson("/api/v1/auth/register", JSON.stringify({ firstName: "A", lastName: "B", email: "a@b.co", userName: "abc", password: "a-long-password", role: "admin" }));
+    assert.equal(res.status, 400);
+  });
+
+  it("validates registration input without echoing the password", async () => {
+    const res = await postJson("/api/v1/auth/register", JSON.stringify({ firstName: "", lastName: "B", email: "nope", userName: "a", password: "short-pw" }));
+    assert.equal(res.status, 400);
+    const text = await res.text();
+    assert.ok(!text.includes("short-pw"));
+  });
+
+  it("has no admin registration endpoint", async () => {
+    const res = await postJson("/api/v1/admin/auth/register", "{}");
+    assert.equal(res.status, 404);
   });
 });
 

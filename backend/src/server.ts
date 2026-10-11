@@ -5,6 +5,9 @@ import { createLogger } from "./lib/logger.js";
 import { connectMongo, disconnectMongo, pingMongo } from "./lib/mongo.js";
 import { createRedisClient, pingRedis } from "./lib/redis.js";
 import { RedisRateLimitStore } from "./middleware/rate-limit.js";
+import { scopePolicies } from "./modules/auth/auth.policy.js";
+import { AuthService } from "./modules/auth/auth.service.js";
+import { User } from "./modules/users/user.model.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -14,12 +17,17 @@ async function main(): Promise<void> {
 
   const redis = createRedisClient(config, logger);
   await Promise.all([connectMongo(config, logger), redis.connect()]);
+  // The unique email/username/phone indexes are a security guarantee, so build them even when autoIndex is off.
+  await User.createIndexes();
+
+  const authService = new AuthService(redis, scopePolicies(config.auth.secureCookies), { user: config.auth.accessTokenSecret, admin: config.auth.adminAccessTokenSecret }, logger.child({ component: "auth" }));
 
   const app = createApp({
     config,
     logger,
     rateLimitStore: new RedisRateLimitStore(redis),
     healthChecks: { mongo: pingMongo, redis: () => pingRedis(redis) },
+    authService,
   });
 
   const server = createServer(app);

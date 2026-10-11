@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express from "express";
 import type { Express } from "express";
 import type { AppConfig } from "./config/env.js";
@@ -8,19 +9,24 @@ import type { RateLimitStore } from "./middleware/rate-limit.js";
 import { requestContext } from "./middleware/request-context.js";
 import { rejectUnsafeKeys } from "./middleware/sanitize.js";
 import { corsPolicy, noStore, originGuard, securityHeaders } from "./middleware/security.js";
+import { createAuthController } from "./modules/auth/auth.controller.js";
+import { adminAuthRoutes, userAuthRoutes } from "./modules/auth/auth.routes.js";
+import type { AuthService } from "./modules/auth/auth.service.js";
 import { healthRouter } from "./routes/health.js";
 import type { HealthCheck } from "./routes/health.js";
 
 export interface AppDependencies {
-  config: Pick<AppConfig, "corsOrigins" | "trustProxy" | "rateLimit">;
+  config: Pick<AppConfig, "corsOrigins" | "trustProxy" | "rateLimit" | "auth">;
   logger: Logger;
   rateLimitStore: RateLimitStore;
   healthChecks: Record<string, HealthCheck>;
+  authService: AuthService;
 }
 
 const JSON_BODY_LIMIT = "100kb";
+const AUTH_RATE_LIMIT = { windowMs: 15 * 60 * 1000, max: 50 };
 
-export function createApp({ config, logger, rateLimitStore, healthChecks }: AppDependencies): Express {
+export function createApp({ config, logger, rateLimitStore, healthChecks, authService }: AppDependencies): Express {
   const app = express();
 
   app.disable("x-powered-by");
@@ -35,9 +41,16 @@ export function createApp({ config, logger, rateLimitStore, healthChecks }: AppD
   app.use(originGuard(config.corsOrigins));
   app.use(rateLimit({ store: rateLimitStore, windowMs: config.rateLimit.windowMs, max: config.rateLimit.max, prefix: "global", logger }));
   app.use(express.json({ limit: JSON_BODY_LIMIT, strict: true, type: "application/json" }));
+  app.use(cookieParser());
   app.use(rejectUnsafeKeys);
 
   app.use("/health", healthRouter(healthChecks));
+
+  // Auth endpoints get a much tighter per-IP budget, and it fails closed if Redis is unavailable.
+  const authLimiter = rateLimit({ store: rateLimitStore, ...AUTH_RATE_LIMIT, prefix: "auth", logger, failOpen: false });
+  const authController = createAuthController(authService, config.auth.secureCookies);
+  app.use("/api/v1/auth", authLimiter, userAuthRoutes(authController, authService));
+  app.use("/api/v1/admin/auth", authLimiter, adminAuthRoutes(authController, authService));
 
   const api = express.Router();
   api.get("/", (_req, res) => {

@@ -22,10 +22,15 @@ const envSchema = z
     LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
     RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
+    ACCESS_TOKEN_SECRET: z.string().min(32, "must be at least 32 characters (use a random 48-byte value)"),
+    ADMIN_ACCESS_TOKEN_SECRET: z.string().min(32, "must be at least 32 characters (use a random 48-byte value)"),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && env.CORS_ORIGINS.some((origin) => !origin.startsWith("https://"))) {
       ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "production origins must use https" });
+    }
+    if (env.ACCESS_TOKEN_SECRET === env.ADMIN_ACCESS_TOKEN_SECRET) {
+      ctx.addIssue({ code: "custom", path: ["ADMIN_ACCESS_TOKEN_SECRET"], message: "must differ from ACCESS_TOKEN_SECRET" });
     }
   });
 
@@ -41,6 +46,7 @@ export interface AppConfig {
   trustProxy: number;
   logLevel: LogLevel;
   rateLimit: { windowMs: number; max: number };
+  auth: { accessTokenSecret: string; adminAccessTokenSecret: string; secureCookies: boolean };
 }
 
 export function loadConfig(): AppConfig {
@@ -69,5 +75,6 @@ export function loadConfig(): AppConfig {
     trustProxy: env.TRUST_PROXY,
     logLevel: env.LOG_LEVEL,
     rateLimit: Object.freeze({ windowMs: env.RATE_LIMIT_WINDOW_MS, max: env.RATE_LIMIT_MAX }),
+    auth: Object.freeze({ accessTokenSecret: env.ACCESS_TOKEN_SECRET, adminAccessTokenSecret: env.ADMIN_ACCESS_TOKEN_SECRET, secureCookies: isProduction }),
   });
 }

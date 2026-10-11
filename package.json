@@ -1,0 +1,26 @@
+{
+  "name": "eccomerce-mern-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E-commerce monorepo: Express API backend, Next.js storefront and Next.js admin.",
+  "workspaces": [
+    "backend",
+    "storefront",
+    "admin"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n BACKEND,STOREFRONT,ADMIN -c blue,green,magenta \"npm run dev -w backend\" \"npm run dev -w storefront\" \"npm run dev -w admin\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:storefront": "npm run dev -w storefront",
+    "dev:admin": "npm run dev -w admin",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "audit:prod": "npm audit --omit=dev",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

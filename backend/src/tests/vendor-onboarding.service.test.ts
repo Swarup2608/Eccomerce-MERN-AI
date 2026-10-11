@@ -4,7 +4,6 @@ import test, { after, before, beforeEach } from "node:test";
 import mongoose from "mongoose";
 
 import { AppError } from "../errors/AppError.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "../module/User/super-admin.constants.js";
 import { User } from "../module/User/user.model.js";
 import { Vendor } from "../module/Vendor/vendor.model.js";
 import { VendorAddress } from "../module/Vendor/vendorAddress.model.js";
@@ -16,6 +15,7 @@ import { addAddress, addDocument, changeVendorStatus, deleteDocument, getMyOnboa
 import { decryptString } from "../utils/encryption.js";
 
 const mongoTestUri = process.env.MONGO_TEST_URI;
+const REVIEWER_ID = new mongoose.Types.ObjectId().toString();
 async function clearCollections() {
   await Promise.all([
     User.deleteMany({}),
@@ -141,7 +141,7 @@ test("the Super Admin can approve an application, which publishes the store and 
   const vendor = await completeApplication(userId);
   await submitOnboarding(userId);
 
-  const result = await reviewApplication(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { decision: "approve" });
+  const result = await reviewApplication(vendor._id.toString(), REVIEWER_ID, { decision: "approve" });
 
   const [updatedUser, store, bank, documents] = await Promise.all([
     User.findById(user._id).lean(),
@@ -151,7 +151,7 @@ test("the Super Admin can approve an application, which publishes the store and 
   ]);
 
   assert.equal(result.application.status, "approved");
-  assert.equal(result.application.reviewedBy, SUPER_ADMIN_IDENTITY_ID);
+  assert.equal(result.application.reviewedBy, REVIEWER_ID);
   assert.equal(result.vendor.status, "active");
   assert.equal(updatedUser?.role, "vendor");
   assert.equal(store?.isPublished, true);
@@ -165,7 +165,7 @@ test("a rejected application can be corrected and resubmitted", async () => {
   const vendor = await completeApplication(userId);
   await submitOnboarding(userId);
 
-  await reviewApplication(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { decision: "reject", rejectionReason: "ID document is unreadable." });
+  await reviewApplication(vendor._id.toString(), REVIEWER_ID, { decision: "reject", rejectionReason: "ID document is unreadable." });
   assert.equal((await Vendor.findById(vendor._id).lean())?.status, "rejected");
 
   const resubmitted = await submitOnboarding(userId);
@@ -192,7 +192,7 @@ test("verified documents cannot be deleted by the applicant", async () => {
   const vendor = await completeApplication(userId);
   const document = await VendorDocument.findOne({ vendorId: vendor._id }).lean();
 
-  await reviewDocument(vendor._id.toString(), document!._id.toString(), SUPER_ADMIN_IDENTITY_ID, { status: "verified" });
+  await reviewDocument(vendor._id.toString(), document!._id.toString(), REVIEWER_ID, { status: "verified" });
 
   await assert.rejects(
     deleteDocument(userId, document!._id.toString()),
@@ -205,16 +205,16 @@ test("suspending an active vendor unpublishes its store and reactivating restore
   const userId = user._id.toString();
   const vendor = await completeApplication(userId);
   await submitOnboarding(userId);
-  await reviewApplication(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { decision: "approve" });
+  await reviewApplication(vendor._id.toString(), REVIEWER_ID, { decision: "approve" });
 
-  await changeVendorStatus(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { action: "suspend", reason: "Policy violation" });
+  await changeVendorStatus(vendor._id.toString(), REVIEWER_ID, { action: "suspend", reason: "Policy violation" });
   assert.equal((await VendorStore.findOne({ vendorId: vendor._id }).lean())?.isPublished, false);
 
-  await changeVendorStatus(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { action: "reactivate" });
+  await changeVendorStatus(vendor._id.toString(), REVIEWER_ID, { action: "reactivate" });
   assert.equal((await VendorStore.findOne({ vendorId: vendor._id }).lean())?.isPublished, true);
 
   await assert.rejects(
-    changeVendorStatus(vendor._id.toString(), SUPER_ADMIN_IDENTITY_ID, { action: "reactivate" }),
+    changeVendorStatus(vendor._id.toString(), REVIEWER_ID, { action: "reactivate" }),
     (error: unknown) => error instanceof AppError && error.code === "INVALID_VENDOR_STATUS",
   );
 });

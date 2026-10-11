@@ -39,9 +39,6 @@ const envSchema = z.object({
     ADMIN_URL: z.string().url("ADMIN_URL must be a valid URL").default("http://localhost:3001"),
     VENDOR_URL: z.string().url("VENDOR_URL must be a valid URL").default("http://localhost:3002"),
 
-    SUPER_ADMIN_EMAIL: z.string().trim().email("SUPER_ADMIN_EMAIL must be a valid email").transform((value) => value.toLowerCase()).optional(),
-    SUPER_ADMIN_PASSWORD_HASH: z.string().startsWith("$argon2id$", "SUPER_ADMIN_PASSWORD_HASH must be an Argon2id hash").optional(),
-
     // 32-byte key (64 hex chars) for encrypting bank account numbers at rest.
     DATA_ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, "DATA_ENCRYPTION_KEY must be 64 hex characters").optional(),
 
@@ -69,7 +66,16 @@ const envSchema = z.object({
     }
 });
 
-const parsedEnv = envSchema.safeParse(process.env);
+// dotenv loads `KEY=` as an empty string; treat it as unset so optional settings can stay blank.
+function withoutBlankValues(source: NodeJS.ProcessEnv): Record<string, string> {
+    return Object.fromEntries(Object.entries(source).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim() !== ""));
+}
+
+export function parseEnv(source: NodeJS.ProcessEnv) {
+    return envSchema.safeParse(withoutBlankValues(source));
+}
+
+const parsedEnv = parseEnv(process.env);
 
 if (!parsedEnv.success) {
     console.error("Invalid environment configuration");

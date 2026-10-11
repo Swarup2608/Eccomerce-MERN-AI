@@ -403,6 +403,86 @@ test("POST /api/v1/auth/verify-email rejects an empty token", async () => {
   }
 });
 
+test("POST /api/v1/auth/super-admin/login rejects an invalid body", async () => {
+  const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/auth/super-admin/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "not-an-email", password: "" }) });
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("POST /api/v1/auth/super-admin/login rejects unexpected fields", async () => {
+  const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/auth/super-admin/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "owner@example.com", password: "password", role: "super_admin" }) });
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("GET /api/v1/auth/me requires an access token", async () => {
+  const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/auth/me`);
+
+    assert.equal(response.status, 401);
+
+    const body = await response.json();
+
+    assert.equal(body.error.code, "AUTHENTICATION_REQUIRED");
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("GET /api/v1/auth/me rejects a forged access token", async () => {
+  const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/auth/me`, { headers: { Cookie: "accessToken=not-a-real-token" } });
+
+    assert.equal(response.status, 401);
+
+    const body = await response.json();
+
+    assert.equal(body.error.code, "INVALID_ACCESS_TOKEN");
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
+test("POST /api/v1/auth/logout clears both auth cookies", async () => {
+  const { server, baseUrl } = await startTestServer({ isMongoReady: () => true, isRedisReady: () => true });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/auth/logout`, { method: "POST" });
+
+    assert.equal(response.status, 200);
+
+    const cleared = response.headers.getSetCookie().map((cookie) => cookie.split("=")[0]).sort();
+
+    assert.deepEqual(cleared, ["accessToken", "refreshToken"]);
+  } finally {
+    await stopTestServer(server);
+  }
+});
+
 test("POST /api/v1/auth/verify-email rejects unexpected fields", async () => {
   const { server, baseUrl } = await startTestServer({
     isMongoReady: () => true,

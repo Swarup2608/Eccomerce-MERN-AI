@@ -1,9 +1,8 @@
 import type { RequestHandler } from "express";
-import { env } from "../config/env.js";
 import { AppError } from "../errors/AppError.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "../module/User/super-admin.constants.js";
 import { User } from "../module/User/user.model.js";
-import { USER_ROLES, USER_STATUSES, type UserRole } from "../module/User/user.validation.js";
+import { USER_STATUSES, type UserRole } from "../module/User/user.validation.js";
+import { objectIdSchema } from "../utils/ids.js";
 import { verifyAccessToken } from "../utils/jwt.js";
 import { getSession } from "../utils/session.js";
 
@@ -11,14 +10,13 @@ export interface AuthenticateDependencies {
   verifyAccessToken: typeof verifyAccessToken;
   getSession: typeof getSession;
   findUser: (userId: string) => Promise<{ role: UserRole; status: string } | null>;
-  isSuperAdminConfigured: () => boolean;
 }
 
 const defaultDependencies: AuthenticateDependencies = {
   verifyAccessToken,
   getSession,
-  findUser: async (userId) => User.findById(userId).select("role status").lean(),
-  isSuperAdminConfigured: () => Boolean(env.SUPER_ADMIN_EMAIL && env.SUPER_ADMIN_PASSWORD_HASH),
+  // Tokens from before the Super Admin moved to MongoDB carry a non-ObjectId subject; treat them as unknown users.
+  findUser: async (userId) => (objectIdSchema.safeParse(userId).success ? User.findById(userId).select("role status").lean() : null),
 };
 
 export function createAuthenticate(dependencies: AuthenticateDependencies = defaultDependencies): RequestHandler {
@@ -40,20 +38,7 @@ export function createAuthenticate(dependencies: AuthenticateDependencies = defa
         return next(new AppError("Your session has ended. Please sign in again.", 401, "SESSION_REVOKED"));
       }
 
-      if (payload.sub === SUPER_ADMIN_IDENTITY_ID) {
-        if (!dependencies.isSuperAdminConfigured()) {
-          return next(new AppError("Super Admin login is not configured.", 401, "ACCOUNT_INACTIVE"));
-        }
-
-        res.locals.user = {
-          userId: SUPER_ADMIN_IDENTITY_ID,
-          sessionId: payload.sid,
-          role: USER_ROLES.SUPER_ADMIN,
-        };
-
-        return next();
-      }
-
+      // The role is always read from the database, so a role change applies on the next request.
       const user = await dependencies.findUser(payload.sub);
 
       if (!user || user.status !== USER_STATUSES.ACTIVE) {

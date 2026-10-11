@@ -44,7 +44,7 @@ export type LoginUserInput = z.infer<typeof loginUserSchema>;
 
 export const superAdminLoginSchema = z.object({
     email: z.string().trim().email("A valid email is required.").transform((val) => val.toLowerCase()),
-    password: z.string().min(1, "Password is required."),
-});
+    password: z.string().min(1, "Password is required.").max(128, "Password must be at most 128 characters"),
+}).strict();
 
 export type SuperAdminLoginInput = z.infer<typeof superAdminLoginSchema>;

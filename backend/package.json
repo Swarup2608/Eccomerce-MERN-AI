@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test --test-concurrency=1 \"src/tests/**/*.test.ts\"",
     "seed:categories": "tsx src/module/Category/category.seed.ts",
-    "seed:demo-product": "tsx src/module/Product/product.seed.ts"
+    "seed:demo-product": "tsx src/module/Product/product.seed.ts",
+    "seed:super-admin": "tsx src/module/User/super-admin.seed.ts"
   },
   "keywords": [],
   "author": "",

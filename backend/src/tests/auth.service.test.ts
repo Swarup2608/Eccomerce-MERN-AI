@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import mongoose, { Types } from "mongoose";
 
 import { AppError } from "../errors/AppError.js";
-import { registerUser, loginUser, refreshUserSession, type RegisterUserDependencies, type LoginUserDependencies, type RefreshTokenDependencies } from "../module/User/auth.service.js";
+import { registerUser, loginUser, refreshUserSession, loginSuperAdmin, type RegisterUserDependencies, type LoginUserDependencies, type RefreshTokenDependencies } from "../module/User/auth.service.js";
 import { EmailVerification } from "../module/User/email-verification.model.js";
 import { User } from "../module/User/user.model.js";
 import { USER_ROLES, USER_STATUSES, type RegisterUserInput, type LoginUserInput } from "../module/User/user.validation.js";
@@ -105,6 +105,23 @@ function createRefreshDependencies(overrides: Partial<RefreshTokenDependencies> 
     signRefreshToken: (_userId, _sessionId, _refreshTokenId) => "new-refresh-token",
     ...overrides,
   };
+}
+
+const SUPER_ADMIN_EMAIL = "owner@example.com";
+
+function createSuperAdminLoginDependencies(overrides: Partial<LoginUserDependencies> = {}): LoginUserDependencies {
+  return createLoginDependencies({
+    findUser: async (email) => User.findOne({ email, role: USER_ROLES.SUPER_ADMIN }).select("+passwordHash"),
+    ...overrides,
+  });
+}
+
+async function createSuperAdminUser(overrides: Record<string, unknown> = {}) {
+  return User.create({ firstName: "Super", lastName: "Admin", email: SUPER_ADMIN_EMAIL, userName: "super_admin", passwordHash: "hashed:correct-password", role: USER_ROLES.SUPER_ADMIN, emailVerified: true, ...overrides });
+}
+
+function isAppError(code: string, statusCode: number) {
+  return (error: unknown) => error instanceof AppError && error.code === code && error.statusCode === statusCode;
 }
 
 before(async () => {
@@ -510,4 +527,106 @@ test("refreshUserSession rejects a refresh token when rotation fails", async () 
       error instanceof AppError &&
       error.code === "INVALID_REFRESH_TOKEN",
   );
+});
+
+test("refreshUserSession rejects a token whose jti no longer matches the session", async () => {
+  let rotated = false;
+
+  const dependencies = createRefreshDependencies({
+    getSession: async () => ({ ...refreshTestSession, refreshTokenId: "already-rotated" }),
+    rotateSessionRefreshToken: async () => {
+      rotated = true;
+      return true;
+    },
+  });
+
+  await assert.rejects(refreshUserSession("replayed-refresh-token", dependencies), isAppError("INVALID_REFRESH_TOKEN", 401));
+  assert.equal(rotated, false);
+});
+
+test("loginUser sends the Super Admin to its own sign-in", async () => {
+  await createSuperAdminUser();
+  let sessionCreated = false;
+
+  const dependencies = createLoginDependencies({
+    createSession: async (userId) => {
+      sessionCreated = true;
+      return { sessionId: "s", userId, refreshTokenId: "r", createdAt: new Date().toISOString() };
+    },
+  });
+
+  await assert.rejects(loginUser(buildLoginInput({ identifier: SUPER_ADMIN_EMAIL, password: "correct-password" }), dependencies), isAppError("USE_SUPER_ADMIN_LOGIN", 403));
+  assert.equal(sessionCreated, false);
+});
+
+test("loginSuperAdmin signs in the Super Admin stored in MongoDB", async () => {
+  const superAdmin = await createSuperAdminUser();
+  let sessionUserId: string | undefined;
+
+  const result = await loginSuperAdmin(
+    { email: SUPER_ADMIN_EMAIL, password: "correct-password" },
+    createSuperAdminLoginDependencies({
+      createSession: async (userId) => {
+        sessionUserId = userId;
+        return { sessionId: "sa-session", userId, refreshTokenId: "sa-refresh", createdAt: new Date().toISOString() };
+      },
+    }),
+  );
+
+  assert.equal(sessionUserId, superAdmin._id.toString());
+  assert.equal(result.user.id, superAdmin._id.toString());
+  assert.equal(result.user.role, USER_ROLES.SUPER_ADMIN);
+  assert.equal("passwordHash" in result.user, false);
+
+  const updated = await User.findById(superAdmin._id);
+  assert.ok(updated?.lastLoginAt);
+});
+
+test("loginSuperAdmin matches the email case-insensitively", async () => {
+  await createSuperAdminUser();
+
+  const result = await loginSuperAdmin({ email: "  OWNER@Example.com ", password: "correct-password" }, createSuperAdminLoginDependencies());
+
+  assert.equal(result.user.email, SUPER_ADMIN_EMAIL);
+});
+
+test("loginSuperAdmin rejects a wrong password without creating a session", async () => {
+  await createSuperAdminUser();
+  let sessionCreated = false;
+
+  const dependencies = createSuperAdminLoginDependencies({
+    createSession: async (userId) => {
+      sessionCreated = true;
+      return { sessionId: "s", userId, refreshTokenId: "r", createdAt: new Date().toISOString() };
+    },
+  });
+
+  await assert.rejects(loginSuperAdmin({ email: SUPER_ADMIN_EMAIL, password: "wrong-password" }, dependencies), isAppError("INVALID_CREDENTIALS", 401));
+  assert.equal(sessionCreated, false);
+});
+
+test("loginSuperAdmin rejects an unknown email with the same error and still runs a password check", async () => {
+  let checkedHash: string | undefined;
+
+  const dependencies = createSuperAdminLoginDependencies({
+    verifyPassword: async (_password, passwordHash) => {
+      checkedHash = passwordHash;
+      return false;
+    },
+  });
+
+  await assert.rejects(loginSuperAdmin({ email: "nobody@example.com", password: "correct-password" }, dependencies), isAppError("INVALID_CREDENTIALS", 401));
+  assert.ok(checkedHash?.startsWith("$argon2id$"), "a dummy Argon2id hash should be verified");
+});
+
+test("loginSuperAdmin rejects an admin who is not the Super Admin", async () => {
+  await createSuperAdminUser({ role: USER_ROLES.ADMIN });
+
+  await assert.rejects(loginSuperAdmin({ email: SUPER_ADMIN_EMAIL, password: "correct-password" }, createSuperAdminLoginDependencies()), isAppError("INVALID_CREDENTIALS", 401));
+});
+
+test("loginSuperAdmin rejects a suspended Super Admin", async () => {
+  await createSuperAdminUser({ status: USER_STATUSES.SUSPENDED });
+
+  await assert.rejects(loginSuperAdmin({ email: SUPER_ADMIN_EMAIL, password: "correct-password" }, createSuperAdminLoginDependencies()), isAppError("ACCOUNT_NOT_ACTIVE", 403));
 });

@@ -4,12 +4,11 @@ import { hashPassword, verifyPassword } from "../../utils/password.js";
 import { EmailVerification } from "./email-verification.model.js";
 import { sendEmailVerification } from "./email-verification.service.js";
 import { User } from "./user.model.js";
-import type { RegisterUserInput, LoginUserInput, SuperAdminLoginInput } from "./user.validation.js";
+import { USER_ROLES, type RegisterUserInput, type LoginUserInput, type SuperAdminLoginInput } from "./user.validation.js";
 import { createSession, revokeSession, getSession, rotateSessionRefreshToken } from "../../utils/session.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import { randomUUID } from "crypto";
-import { env } from "../../config/env.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "./super-admin.constants.js";
+import { objectIdSchema } from "../../utils/ids.js";
 
 export interface AuthenticatedUserDto {
     id: string;
@@ -149,7 +148,7 @@ const defaultLoginUserDependencies: LoginUserDependencies = {
 
 const defaultRefreshTokenDependencies: RefreshTokenDependencies = {
     getSession,
-    findUser: async (userId) => User.findById(userId).select("status emailVerified"),
+    findUser: async (userId) => (objectIdSchema.safeParse(userId).success ? User.findById(userId).select("status emailVerified") : null),
     revokeSession,
     rotateSessionRefreshToken,
     signAccessToken,
@@ -157,6 +156,23 @@ const defaultRefreshTokenDependencies: RefreshTokenDependencies = {
     randomUUID,
     verifyRefreshToken,
 };
+
+// Same flow as a regular login, but only an account holding the super_admin role can be found.
+const defaultSuperAdminLoginDependencies: LoginUserDependencies = {
+    ...defaultLoginUserDependencies,
+    findUser: async (email) => User.findOne({ email, role: USER_ROLES.SUPER_ADMIN }).select("+passwordHash"),
+};
+
+type LoginCandidate = NonNullable<Awaited<ReturnType<LoginUserDependencies["findUser"]>>>;
+
+let dummyPasswordHash: Promise<string> | undefined;
+
+// Verifying against a throwaway hash when no account matches keeps response timing
+// from revealing whether the email exists.
+function getDummyPasswordHash(): Promise<string> {
+    dummyPasswordHash ??= hashPassword(randomUUID());
+    return dummyPasswordHash;
+}
 
 export interface LoginResult {
     user: AuthenticatedUserDto;
@@ -186,6 +202,15 @@ export async function loginUser(input: LoginUserInput, dependencies: LoginUserDe
         throw new AppError("This account is not available for login.", 403, "ACCOUNT_NOT_ACTIVE");
     }
 
+    // The Super Admin has its own endpoint with a stricter rate limit.
+    if (user.role === USER_ROLES.SUPER_ADMIN) {
+        throw new AppError("Please use the Super Admin sign-in.", 403, "USE_SUPER_ADMIN_LOGIN");
+    }
+
+    return startLoginSession(user, dependencies);
+}
+
+async function startLoginSession(user: LoginCandidate, dependencies: LoginUserDependencies): Promise<LoginResult> {
     const session = await dependencies.createSession(user._id.toString());
 
     try {
@@ -225,17 +250,10 @@ export async function refreshUserSession(token: string, dependencies: RefreshTok
         throw new AppError("Invalid or expired session.", 401, "INVALID_REFRESH_TOKEN");
     }
 
-    if (payload.sub === SUPER_ADMIN_IDENTITY_ID) {
-        if (!env.SUPER_ADMIN_EMAIL || !env.SUPER_ADMIN_PASSWORD_HASH) {
-            await dependencies.revokeSession(payload.sid);
-            throw new AppError("This session is no longer valid.", 401, "INVALID_REFRESH_TOKEN");
-        }
-    } else {
-        const user = await dependencies.findUser(payload.sub);
-        if (!user || user.status !== "active" || !user.emailVerified) {
-            await dependencies.revokeSession(payload.sid);
-            throw new AppError("This session is no longer valid.", 401, "INVALID_REFRESH_TOKEN");
-        }
+    const user = await dependencies.findUser(payload.sub);
+    if (!user || user.status !== "active" || !user.emailVerified) {
+        await dependencies.revokeSession(payload.sid);
+        throw new AppError("This session is no longer valid.", 401, "INVALID_REFRESH_TOKEN");
     }
 
     const nextTokenId = dependencies.randomUUID();
@@ -251,36 +269,18 @@ export async function refreshUserSession(token: string, dependencies: RefreshTok
     };
 }
 
-export async function loginSuperAdmin(input: SuperAdminLoginInput): Promise<LoginResult> {
-    const email = env.SUPER_ADMIN_EMAIL;
-    const passwordHash = env.SUPER_ADMIN_PASSWORD_HASH;
+export async function loginSuperAdmin(input: SuperAdminLoginInput, dependencies: LoginUserDependencies = defaultSuperAdminLoginDependencies): Promise<LoginResult> {
+    const user = await dependencies.findUser(input.email.trim().toLowerCase());
+    const passwordMatches = await dependencies.verifyPassword(input.password, user?.passwordHash ?? (await getDummyPasswordHash()));
 
-    if (!email || !passwordHash) {
-        throw new AppError("Super Admin login is not configured.", 503, "SUPER_ADMIN_NOT_CONFIGURED");
-    }
-
-    const emailMatches = input.email.trim().toLowerCase() === email;
-    const passwordMatches = await verifyPassword(input.password, passwordHash);
-
-    if (!emailMatches || !passwordMatches) {
+    // Unknown email, wrong password and a non-Super-Admin account all get the same answer.
+    if (!user || user.role !== USER_ROLES.SUPER_ADMIN || !passwordMatches) {
         throw new AppError("Invalid email or password.", 401, "INVALID_CREDENTIALS");
     }
 
-    const session = await createSession(SUPER_ADMIN_IDENTITY_ID);
+    if (user.status !== "active" || !user.emailVerified) {
+        throw new AppError("This account is not available for login.", 403, "ACCOUNT_NOT_ACTIVE");
+    }
 
-    return {
-        user: {
-            id: SUPER_ADMIN_IDENTITY_ID,
-            firstName: "Super",
-            lastName: "Admin",
-            email,
-            userName: "super-admin",
-            role: "super_admin",
-            status: "active",
-            emailVerified: true,
-            phoneVerified: false,
-        },
-        accessToken: signAccessToken(SUPER_ADMIN_IDENTITY_ID, session.sessionId),
-        refreshToken: signRefreshToken(SUPER_ADMIN_IDENTITY_ID, session.sessionId, session.refreshTokenId),
-    };
+    return startLoginSession(user, dependencies);
 }

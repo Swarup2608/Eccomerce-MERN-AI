@@ -63,34 +63,43 @@ export const refreshTokenController: RequestHandler = async (req, res) => {
   });
 };
 
-export const logoutController: RequestHandler = async (req, res, next) => {
-  const refreshToken = req.cookies?.refreshToken as string | undefined;
+export interface LogoutDependencies {
+  verifyRefreshToken: typeof verifyRefreshToken;
+  revokeSession: typeof revokeSession;
+}
 
-  res.clearCookie("accessToken", accessCookieOptions);
-  res.clearCookie("refreshToken", refreshCookieOptions);
+export function createLogoutController(dependencies: LogoutDependencies = { verifyRefreshToken, revokeSession }): RequestHandler {
+  return async (req, res, next) => {
+    const refreshToken = req.cookies?.refreshToken as string | undefined;
 
-  if (refreshToken) {
-    let sessionId: string | undefined;
-    try {
-      sessionId = verifyRefreshToken(refreshToken).sid;
-    } catch {
-      // Ignore errors during token verification
-    }
-    if (sessionId) {
+    res.clearCookie("accessToken", accessCookieOptions);
+    res.clearCookie("refreshToken", refreshCookieOptions);
+
+    if (refreshToken) {
+      let sessionId: string | undefined;
       try {
-        await revokeSession(sessionId);
-      } catch (error) {
-        next(error);
-        return;
+        sessionId = dependencies.verifyRefreshToken(refreshToken).sid;
+      } catch {
+        // Ignore errors during token verification
+      }
+      if (sessionId) {
+        try {
+          await dependencies.revokeSession(sessionId);
+        } catch (error) {
+          next(error);
+          return;
+        }
       }
     }
-  }
 
-  res.status(200).json({
-    success: true,
-    message: "Logged out successful.",
-  });
-};
+    res.status(200).json({
+      success: true,
+      message: "Logged out successful.",
+    });
+  };
+}
+
+export const logoutController: RequestHandler = createLogoutController();
 
 export const superAdminLoginController: RequestHandler = async (req, res) => {
   const input = req.body as SuperAdminLoginInput;

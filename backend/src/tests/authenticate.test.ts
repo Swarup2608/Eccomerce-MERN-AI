@@ -4,7 +4,6 @@ import type { NextFunction, Request, Response } from "express";
 
 import { AppError } from "../errors/AppError.js";
 import { createAuthenticate, type AuthenticateDependencies } from "../middleware/authenticate.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "../module/User/super-admin.constants.js";
 import type { AccessTokenPayload } from "../utils/jwt.js";
 
 const USER_ID = "64b7f0c2a1b2c3d4e5f60718";
@@ -14,7 +13,6 @@ function buildDependencies(overrides: Partial<AuthenticateDependencies> = {}): A
     verifyAccessToken: () => ({ sub: USER_ID, sid: "session-1", type: "access" }) as AccessTokenPayload,
     getSession: async (sessionId) => ({ sessionId, userId: USER_ID, refreshTokenId: "refresh-1", createdAt: new Date().toISOString() }),
     findUser: async () => ({ role: "user", status: "active" }),
-    isSuperAdminConfigured: () => true,
     ...overrides,
   };
 }
@@ -70,35 +68,19 @@ test("authenticate rejects an inactive user", async () => {
   assert.equal(error.code, "ACCOUNT_INACTIVE");
 });
 
-test("authenticate recognises the Super Admin without a database lookup", async () => {
-  let lookedUp = false;
-  const { error, locals } = await run(
-    buildDependencies({
-      verifyAccessToken: () => ({ sub: SUPER_ADMIN_IDENTITY_ID, sid: "session-sa", type: "access" }) as AccessTokenPayload,
-      getSession: async (sessionId) => ({ sessionId, userId: SUPER_ADMIN_IDENTITY_ID, refreshTokenId: "r", createdAt: new Date().toISOString() }),
-      findUser: async () => {
-        lookedUp = true;
-        return null;
-      },
-    }),
-  );
+test("authenticate takes the Super Admin role from the database user", async () => {
+  const { error, locals } = await run(buildDependencies({ findUser: async () => ({ role: "super_admin", status: "active" }) }));
 
   assert.equal(error, undefined);
-  assert.equal(lookedUp, false);
-  assert.deepEqual(locals.user, { userId: SUPER_ADMIN_IDENTITY_ID, sessionId: "session-sa", role: "super_admin" });
+  assert.deepEqual(locals.user, { userId: USER_ID, sessionId: "session-1", role: "super_admin" });
 });
 
-test("authenticate rejects the Super Admin when it is no longer configured", async () => {
-  const { error } = await run(
-    buildDependencies({
-      verifyAccessToken: () => ({ sub: SUPER_ADMIN_IDENTITY_ID, sid: "session-sa", type: "access" }) as AccessTokenPayload,
-      getSession: async (sessionId) => ({ sessionId, userId: SUPER_ADMIN_IDENTITY_ID, refreshTokenId: "r", createdAt: new Date().toISOString() }),
-      isSuperAdminConfigured: () => false,
-    }),
-  );
+test("authenticate rejects a suspended Super Admin", async () => {
+  const { error, locals } = await run(buildDependencies({ findUser: async () => ({ role: "super_admin", status: "suspended" }) }));
 
   assert.ok(error instanceof AppError);
   assert.equal(error.code, "ACCOUNT_INACTIVE");
+  assert.equal(locals.user, undefined);
 });
 
 test("authenticate passes token verification errors through", async () => {

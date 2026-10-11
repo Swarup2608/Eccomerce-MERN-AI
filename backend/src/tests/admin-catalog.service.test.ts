@@ -11,12 +11,11 @@ import { deleteCategory } from "../module/Category/category.service.js";
 import { Product } from "../module/Product/product.model.js";
 import { ProductVariant } from "../module/Product/productVariant.model.js";
 import { createProduct, createProductVariant, deleteProductVariant, getProductForAdmin, updateProductVariant } from "../module/Product/product.service.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "../module/User/super-admin.constants.js";
 import { User } from "../module/User/user.model.js";
 import type { AuthenticatedActor } from "../utils/actor.js";
 
 const mongoTestUri = process.env.MONGO_TEST_URI;
-const superAdmin: AuthenticatedActor = { userId: SUPER_ADMIN_IDENTITY_ID, sessionId: "s", role: "super_admin" };
+const superAdmin: AuthenticatedActor = { userId: new mongoose.Types.ObjectId().toString(), sessionId: "s", role: "super_admin" };
 
 async function clearCollections() {
   await Promise.all([User.deleteMany({}), CategoryModel.deleteMany({}), Product.deleteMany({}), ProductVariant.deleteMany({})]);

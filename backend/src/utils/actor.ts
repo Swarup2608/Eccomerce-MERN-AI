@@ -1,6 +1,5 @@
 import type { Response } from "express";
 import { AppError } from "../errors/AppError.js";
-import { SUPER_ADMIN_IDENTITY_ID } from "../module/User/super-admin.constants.js";
 import type { UserRole } from "../module/User/user.validation.js";
 
 export interface AuthenticatedActor {
@@ -18,8 +17,4 @@ export function getActor(res: Response): AuthenticatedActor {
     }
 
     return { userId: user.userId, sessionId: user.sessionId, role: user.role };
-}
-
-export function isSuperAdminId(userId: string): boolean {
-    return userId === SUPER_ADMIN_IDENTITY_ID;
 }

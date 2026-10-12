@@ -12,9 +12,13 @@ import { AuditEvent } from "./modules/audit/audit.model.js";
 import { AuthService } from "./modules/auth/auth.service.js";
 import { COMMERCE_MODELS, createCommerce } from "./modules/commerce.js";
 import { R2Storage } from "./lib/storage.js";
+import { RazorpayGateway } from "./modules/payments/razorpay.js";
+import { StripeGateway } from "./modules/payments/stripe.js";
 import { User } from "./modules/users/user.model.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
+const ORDER_SWEEP_INTERVAL_MS = 60_000;
+const ORDER_SWEEP_LOCK = "lock:order-expiry";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -28,6 +32,7 @@ async function main(): Promise<void> {
   await Promise.all([User.createIndexes(), AuditEvent.createIndexes(), ...COMMERCE_MODELS.map((model) => model.createIndexes())]);
 
   const audit = createAuditRecorder(logger);
+  const mailer = createMailer(config, logger);
   const authService = new AuthService({
     redis,
     policies: scopePolicies(config.auth.secureCookies),
@@ -35,12 +40,20 @@ async function main(): Promise<void> {
     storefrontUrl: config.storefrontUrl,
     adminUrl: config.adminUrl,
     logger: logger.child({ component: "auth" }),
-    mailer: createMailer(config, logger),
+    mailer,
     audit,
   });
 
   if (!config.r2) logger.warn("R2 is not configured: product image uploads are disabled");
-  const commerce = createCommerce({ logger, audit, storage: config.r2 ? new R2Storage(config.r2) : undefined });
+  if (!config.razorpay && !config.stripe) logger.warn("No payment gateway is configured: only Cash on Delivery is available");
+  const commerce = createCommerce({
+    logger,
+    audit,
+    mailer,
+    storefrontUrl: config.storefrontUrl,
+    storage: config.r2 ? new R2Storage(config.r2) : undefined,
+    payments: { razorpay: config.razorpay ? new RazorpayGateway(config.razorpay) : undefined, stripe: config.stripe ? new StripeGateway(config.stripe, config.storefrontUrl) : undefined },
+  });
 
   const app = createApp({
     config,
@@ -65,6 +78,21 @@ async function main(): Promise<void> {
   });
   logger.info("API listening", { host: config.host, port: config.port });
 
+  // Unpaid online orders hand their stock back once the payment window closes. With several instances, a short Redis
+  // lock lets only one of them sweep per interval.
+  const sweep = setInterval(() => {
+    void (async () => {
+      try {
+        if ((await redis.set(ORDER_SWEEP_LOCK, "1", "PX", ORDER_SWEEP_INTERVAL_MS - 5_000, "NX")) !== "OK") return;
+        const expired = await commerce.orders.expireStale();
+        if (expired > 0) logger.info("Expired unpaid orders", { count: expired });
+      } catch (error) {
+        logger.error("Order expiry sweep failed", { error });
+      }
+    })();
+  }, ORDER_SWEEP_INTERVAL_MS);
+  sweep.unref();
+
   let shuttingDown = false;
   const shutdown = async (reason: string, exitCode: number): Promise<void> => {
     if (shuttingDown) return;
@@ -77,6 +105,7 @@ async function main(): Promise<void> {
     }, SHUTDOWN_TIMEOUT_MS);
     forceExit.unref();
 
+    clearInterval(sweep);
     const closed = new Promise<void>((resolve) => server.close(() => resolve()));
     server.closeIdleConnections();
     await closed;

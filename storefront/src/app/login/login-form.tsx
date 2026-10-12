@@ -7,6 +7,15 @@ import { FormError, FormField, SubmitButton } from "@/components/form-field";
 import { ApiError } from "@/lib/api";
 import { errorMessage, login, resendLoginCode, resendVerification, verifyLoginCode } from "@/lib/auth";
 import { setSession } from "@/lib/session";
+import { mergeGuestCart } from "@/lib/cart";
+
+// Where to go after signing in. Only these fixed paths are accepted from ?next= (anything else would be an open redirect).
+const RETURN_PATHS = new Set(["/checkout", "/cart", "/account/wishlist", "/account/orders"]);
+
+function afterLoginPath(): string {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && RETURN_PATHS.has(next) ? next : "/account";
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -38,8 +47,9 @@ export function LoginForm() {
         }
         setSession(result);
       }
-      // Fixed destination only: never redirect to a URL taken from the query string (open redirect).
-      router.replace("/account");
+      // The guest cart joins the account cart before leaving the page.
+      await mergeGuestCart();
+      router.replace(afterLoginPath());
     } catch (err) {
       setError(errorMessage(err));
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED" && identifier.includes("@")) setUnverifiedEmail(identifier.trim());

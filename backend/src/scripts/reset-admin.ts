@@ -11,19 +11,23 @@ import { z } from "zod";
 
 // Break-glass recovery for the admin account, run on a machine that already holds the production secrets. The normal
 // path is "Forgot password" on the admin app; this is for when the admin mailbox itself is lost.
-//   RESET_ADMIN_EMAIL=you@example.com RESET_ADMIN_PASSWORD='new-12+char-password' npm run reset:admin -w backend
+//   RESET_ADMIN_EMAIL=you@example.com RESET_ADMIN_PASSWORD='new-12+char-password' npm run reset:admin
 // Every session of that admin is revoked.
 async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger("info", { script: "reset-admin" });
 
-  const input = z
+  const parsed = z
     .object({
-      email: z.string().trim().email().transform((value) => value.toLowerCase()),
-      password: adminPasswordSchema,
+      email: z.string({ message: "RESET_ADMIN_EMAIL is not set" }).trim().email("RESET_ADMIN_EMAIL is not a valid email").transform((value) => value.toLowerCase()),
+      password: z.string({ message: "RESET_ADMIN_PASSWORD is not set" }).pipe(adminPasswordSchema),
     })
-    .parse({ email: process.env.RESET_ADMIN_EMAIL, password: process.env.RESET_ADMIN_PASSWORD || undefined });
-  if (!input.password) throw new Error("Set RESET_ADMIN_PASSWORD");
+    .safeParse({ email: process.env.RESET_ADMIN_EMAIL || undefined, password: process.env.RESET_ADMIN_PASSWORD || undefined });
+  if (!parsed.success) {
+    const problems = parsed.error.issues.map((issue) => `  - ${issue.message}`).join("\n");
+    throw new Error(`${problems}\n\nUsage: RESET_ADMIN_EMAIL=you@example.com RESET_ADMIN_PASSWORD='New-12+chars' npm run reset:admin`);
+  }
+  const input = parsed.data;
 
   await connectMongo(config, logger);
   const redis = createRedisClient(config, logger);

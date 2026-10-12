@@ -11,9 +11,12 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
-    "img-src 'self' blob: data:",
+    `img-src 'self' blob: data:${env.imageOrigin ? ` ${env.imageOrigin}` : ""} https://cdn.razorpay.com`,
     "font-src 'self'",
-    `connect-src 'self' ${env.apiUrl}`,
+    // Razorpay Checkout (loaded on demand at checkout; 'strict-dynamic' lets our nonce'd bundle add its script) talks to
+    // these hosts and shows the payment form in a frame. Stripe Checkout is a full-page redirect and needs nothing here.
+    `connect-src 'self' ${env.apiUrl} https://api.razorpay.com https://lumberjack.razorpay.com`,
+    "frame-src https://api.razorpay.com https://checkout.razorpay.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

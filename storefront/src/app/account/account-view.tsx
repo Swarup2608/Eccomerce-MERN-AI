@@ -7,6 +7,8 @@ import { FormError } from "@/components/form-field";
 import { TwoStepForm } from "@/components/two-step-form";
 import { errorMessage, getCurrentUser, logout, type User } from "@/lib/auth";
 import { setSession } from "@/lib/session";
+import { resetCart } from "@/lib/cart";
+import Link from "next/link";
 
 // The API is the real gatekeeper; this only decides what to render.
 export function AccountView() {
@@ -43,6 +45,7 @@ export function AccountView() {
     try {
       await logout(everywhere);
       setSession(null);
+      resetCart();
       router.replace("/login");
     } catch (err) {
       setError(errorMessage(err));
@@ -73,10 +76,23 @@ export function AccountView() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Hi, {user.firstName}</h1>
-        <p className="mt-1 text-sm text-black/60 dark:text-white/60">Manage your profile and sessions.</p>
+        <p className="mt-1 text-sm text-black/60 dark:text-white/60">Your orders, saved items, profile and sessions.</p>
       </div>
 
       <FormError message={error} />
+
+      <nav aria-label="Account" className="grid gap-3 sm:grid-cols-3">
+        {[
+          { href: "/account/orders", title: "Orders", text: "Track, pay for or cancel orders" },
+          { href: "/account/wishlist", title: "Wishlist", text: "Products you saved for later" },
+          { href: "/account/addresses", title: "Addresses", text: "Where we deliver to" },
+        ].map((link) => (
+          <Link key={link.href} href={link.href} className="rounded-lg border border-black/10 p-4 hover:border-black/30 dark:border-white/10 dark:hover:border-white/30">
+            <p className="font-medium">{link.title}</p>
+            <p className="mt-1 text-xs text-black/60 dark:text-white/60">{link.text}</p>
+          </Link>
+        ))}
+      </nav>
 
       <dl className="divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/10">
         {rows.map(([label, value]) => (

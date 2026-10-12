@@ -18,6 +18,7 @@ import { AuthService } from "../../modules/auth/auth.service.js";
 import { User } from "../../modules/users/user.model.js";
 import { COMMERCE_MODELS, createCommerce, type CommerceServices } from "../../modules/commerce.js";
 import { MemoryStorage } from "../../lib/storage.js";
+import { fakePayments, type FakePayments } from "./fake-gateways.js";
 
 // CI provides service containers through these two variables; locally the harness starts redis-server and mongod itself.
 const EXTERNAL = { redis: process.env.TEST_REDIS_URL, mongo: process.env.TEST_MONGODB_URI };
@@ -139,6 +140,7 @@ export interface TestApp {
   service: AuthService;
   commerce: CommerceServices;
   storage: MemoryStorage;
+  payments: FakePayments;
   stop(): Promise<void>;
 }
 
@@ -148,7 +150,8 @@ export async function startApp(redis: Redis, options: { adminAllowedIps?: string
   const logger = createLogger("error");
   const service = new AuthService({ redis, policies: scopePolicies(false), secrets: SECRETS, storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, logger, mailer, audit });
   const storage = new MemoryStorage();
-  const commerce = createCommerce({ logger, audit, storage });
+  const payments = fakePayments(ORIGIN);
+  const commerce = createCommerce({ logger, audit, storage, mailer, storefrontUrl: ORIGIN, payments: { razorpay: payments.razorpay, stripe: payments.stripe } });
   const app = createApp({
     // trustProxy 1 lets each test client pick its own "IP" with X-Forwarded-For.
     config: { storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, trustProxy: 1, rateLimit: { windowMs: 60_000, max: 100_000 }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false }, adminAllowedIps: options.adminAllowedIps ?? [] },
@@ -161,7 +164,7 @@ export async function startApp(redis: Redis, options: { adminAllowedIps?: string
   });
   const server: Server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));
-  return { baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, mailer, audit, service, commerce, storage, stop: () => new Promise<void>((resolve) => server.close(() => resolve())) };
+  return { baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, mailer, audit, service, commerce, storage, payments, stop: () => new Promise<void>((resolve) => server.close(() => resolve())) };
 }
 
 interface StoredCookie {

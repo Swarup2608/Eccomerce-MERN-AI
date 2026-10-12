@@ -17,7 +17,8 @@
     "reset:admin": "tsx src/scripts/reset-admin.ts",
     "unblock:user": "tsx src/scripts/unblock-user.ts",
     "seed:catalog": "tsx src/scripts/seed-catalog.ts",
-    "cleanup:uploads": "tsx src/scripts/cleanup-uploads.ts"
+    "cleanup:uploads": "tsx src/scripts/cleanup-uploads.ts",
+    "r2:cors": "tsx src/scripts/setup-r2-cors.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

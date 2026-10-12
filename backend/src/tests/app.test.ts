@@ -33,7 +33,7 @@ before(async () => {
     },
     authService: new AuthService({ redis, policies, secrets: SECRETS, storefrontUrl: ALLOWED_ORIGIN, adminUrl: "http://localhost:3001", logger: createLogger("error"), mailer: { send: () => Promise.resolve() }, audit: { record: () => undefined } }),
     audit: { record: () => undefined },
-    commerce: createCommerce({ logger: createLogger("error"), audit: { record: () => undefined }, storage: undefined }),
+    commerce: createCommerce({ logger: createLogger("error"), audit: { record: () => undefined }, storage: undefined, mailer: { send: () => Promise.resolve() }, storefrontUrl: ALLOWED_ORIGIN, payments: {} }),
   });
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));

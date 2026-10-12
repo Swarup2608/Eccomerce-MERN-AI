@@ -13,4 +13,12 @@ function readApiUrl(): string {
   return url.origin;
 }
 
-export const env = Object.freeze({ apiUrl: readApiUrl() });
+// Optional origin product images are served from (the R2 public bucket or its custom domain); added to the CSP.
+function readImageOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_IMAGE_ORIGIN;
+  if (!raw) return null;
+  if (!URL.canParse(raw) || new URL(raw).protocol !== "https:") throw new Error("NEXT_PUBLIC_IMAGE_ORIGIN must be an https URL");
+  return new URL(raw).origin;
+}
+
+export const env = Object.freeze({ apiUrl: readApiUrl(), imageOrigin: readImageOrigin() });

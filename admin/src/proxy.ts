@@ -11,9 +11,10 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
-    "img-src 'self' blob: data:",
+    `img-src 'self' blob: data:${env.imageOrigin ? ` ${env.imageOrigin}` : ""}`,
     "font-src 'self'",
-    `connect-src 'self' ${env.apiUrl}`,
+    // Product images are PUT straight to R2 with a presigned URL.
+    `connect-src 'self' ${env.apiUrl} ${env.uploadOrigin}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

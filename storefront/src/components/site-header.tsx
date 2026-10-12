@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AccountNav } from "@/components/account-nav";
 
 export function SiteHeader({ children }: { children?: ReactNode }) {
   return (
@@ -10,12 +11,7 @@ export function SiteHeader({ children }: { children?: ReactNode }) {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {children}
-          <Link href="/account" className="hover:underline">
-            Account
-          </Link>
-          <Link href="/login" className="hover:underline">
-            Sign in
-          </Link>
+          <AccountNav />
         </nav>
       </div>
     </header>

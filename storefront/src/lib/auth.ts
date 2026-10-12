@@ -7,9 +7,10 @@ export interface User {
   email: string;
   userName: string;
   phoneNumber?: string;
-  role: "user" | "admin";
+  role: "user";
   emailVerified: boolean;
   phoneVerified: boolean;
+  mfaEnabled: boolean;
 }
 
 export interface RegisterInput {
@@ -44,14 +45,55 @@ export async function authFetch(path: `/${string}`, init: RequestInit = {}): Pro
   return apiFetch(path, init);
 }
 
-export async function login(identifier: string, password: string): Promise<User> {
+// Resolves to the signed-in user, or to a challenge id when the account also needs the code that was just emailed.
+export async function login(identifier: string, password: string): Promise<User | { challengeId: string }> {
   const res = await apiFetch(`${BASE}/login`, { method: "POST", body: JSON.stringify({ identifier, password }) });
+  const body = await readJson<{ user?: User; challengeId?: string }>(res);
+  if (body.challengeId) return { challengeId: body.challengeId };
+  if (!body.user) throw new Error("Unexpected response");
+  return body.user;
+}
+
+export async function verifyLoginCode(challengeId: string, code: string): Promise<User> {
+  const res = await apiFetch(`${BASE}/login/verify`, { method: "POST", body: JSON.stringify({ challengeId, code }) });
   return (await readJson<{ user: User }>(res)).user;
 }
 
-export async function register(input: RegisterInput): Promise<User> {
-  const res = await apiFetch(`${BASE}/register`, { method: "POST", body: JSON.stringify(input) });
-  return (await readJson<{ user: User }>(res)).user;
+// Emails a fresh code for the same sign-in attempt (no password needed). Wrong guesses so far still count.
+export async function resendLoginCode(challengeId: string): Promise<void> {
+  await readJson<unknown>(await apiFetch(`${BASE}/login/resend`, { method: "POST", body: JSON.stringify({ challengeId }) }));
+}
+
+// Turns the emailed sign-in code on or off; needs the current password.
+export async function setTwoStep(enabled: boolean, currentPassword: string): Promise<User> {
+  return (await readJson<{ user: User }>(await authFetch(`${BASE}/mfa`, { method: "POST", body: JSON.stringify({ enabled, currentPassword }) }))).user;
+}
+
+// Creating an account never signs you in: a verification link is emailed first.
+export async function register(input: RegisterInput): Promise<void> {
+  await readJson<unknown>(await apiFetch(`${BASE}/register`, { method: "POST", body: JSON.stringify(input) }));
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  await readJson<void>(await apiFetch(`${BASE}/verify-email`, { method: "POST", body: JSON.stringify({ token }) }));
+}
+
+// Public and neutral: the same answer whether or not a mail was sent. Asking too often blocks the account.
+export async function resendVerification(email: string): Promise<void> {
+  await readJson<unknown>(await apiFetch(`${BASE}/resend-verification`, { method: "POST", body: JSON.stringify({ email }) }));
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await readJson<unknown>(await apiFetch(`${BASE}/forgot-password`, { method: "POST", body: JSON.stringify({ email }) }));
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await readJson<void>(await apiFetch(`${BASE}/reset-password`, { method: "POST", body: JSON.stringify({ token, password }) }));
+}
+
+// Signs every other device out; this browser stays signed in.
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await readJson<unknown>(await authFetch(`${BASE}/change-password`, { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }));
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -77,6 +119,7 @@ export async function logout(everywhere = false): Promise<void> {
 
 export function errorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return "Something went wrong. Please check your connection and try again.";
+  if (error.status === 503) return "The service is temporarily unavailable. Please try again in a moment.";
   if (error.details?.length) return error.details.map((detail) => detail.message).join(". ");
   return error.message;
 }

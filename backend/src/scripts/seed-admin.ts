@@ -1,13 +1,12 @@
-import { z } from "zod";
 import { loadConfig } from "../config/env.js";
 import { createLogger } from "../lib/logger.js";
 import { connectMongo, disconnectMongo } from "../lib/mongo.js";
 import { User } from "../modules/users/user.model.js";
-import { USER_ROLES, registerUserSchema } from "../modules/users/user.validation.js";
+import { USER_ROLES, adminPasswordSchema, baseUserNameSchema, registerUserSchema } from "../modules/users/user.validation.js";
 import { hashPassword } from "../utils/password.js";
 
-// Same rules as user registration, but admins need a longer password.
-const seedSchema = registerUserSchema.extend({ password: z.string().min(12, "Admin password must be at least 12 characters").max(128) });
+// Same rules as user registration, but admins need a longer password and may use a name customers cannot (e.g. "admin").
+const seedSchema = registerUserSchema.extend({ userName: baseUserNameSchema, password: adminPasswordSchema });
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -39,8 +38,8 @@ async function main(): Promise<void> {
     }
 
     const passwordHash = await hashPassword(input.password);
-    await User.create({ firstName: input.firstName, lastName: input.lastName, email: input.email, userName: input.userName, phoneNumber: input.phoneNumber, passwordHash, role: USER_ROLES.ADMIN, emailVerified: true });
-    logger.info("Admin created. Remove the SEED_ADMIN_* values from your env file now.");
+    await User.create({ firstName: input.firstName, lastName: input.lastName, email: input.email, userName: input.userName, phoneNumber: input.phoneNumber, passwordHash, role: USER_ROLES.ADMIN, emailVerified: true, mfaEnabled: true });
+    logger.info("Admin created. Every admin sign-in emails a one-time code, so SMTP must be configured. Remove the SEED_ADMIN_* values from your env file.");
   } finally {
     await disconnectMongo();
   }

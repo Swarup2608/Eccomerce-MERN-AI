@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import jwt from "jsonwebtoken";
-import { formatRefreshToken, newRefreshSecret, newSessionId, parseRefreshToken, signAccessToken, verifyAccessToken } from "../utils/tokens.js";
+import { newRefreshTokenId, newSessionId, signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/tokens.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 
 const SECRET = "s".repeat(48);
@@ -26,19 +26,31 @@ describe("access tokens", () => {
   });
 
   it("rejects an unknown role claim", () => {
-    const token = jwt.sign({ sid: "s1", role: "superuser" }, SECRET, { subject: "u1", audience: "admin", issuer: "ecommerce-api" });
+    const token = jwt.sign({ sid: "s1", role: "superuser", type: "access" }, SECRET, { subject: "u1", audience: "admin", issuer: "ecommerce-api" });
     assert.throws(() => verifyAccessToken(token, SECRET, "admin"));
   });
 });
 
 describe("refresh tokens", () => {
-  it("parses only well-formed tokens", () => {
-    const sessionId = newSessionId();
-    const secret = newRefreshSecret();
-    assert.deepEqual(parseRefreshToken(formatRefreshToken(sessionId, secret)), { sessionId, secret });
-    assert.equal(parseRefreshToken("garbage"), null);
-    assert.equal(parseRefreshToken(`${sessionId}.short`), null);
-    assert.equal(parseRefreshToken(undefined), null);
+  const claims = { userId: "u1", sessionId: newSessionId(), tokenId: newRefreshTokenId(), scope: "user" as const };
+
+  it("round-trips and is scoped to its audience and secret", () => {
+    const token = signRefreshToken(claims, SECRET, 60);
+    assert.deepEqual(verifyRefreshToken(token, SECRET, "user"), { userId: "u1", sessionId: claims.sessionId, tokenId: claims.tokenId });
+    assert.throws(() => verifyRefreshToken(token, SECRET, "admin"));
+    assert.throws(() => verifyRefreshToken(token, "x".repeat(48), "user"));
+    assert.throws(() => verifyRefreshToken("garbage", SECRET, "user"));
+  });
+
+  it("is never accepted as an access token, nor an access token as a refresh token", () => {
+    assert.throws(() => verifyAccessToken(signRefreshToken(claims, SECRET, 60), SECRET, "user"));
+    assert.throws(() => verifyRefreshToken(signAccessToken({ userId: "u1", role: "user", sessionId: "s1", scope: "user" }, SECRET, 60), SECRET, "user"));
+  });
+
+  it("can name its session after expiring, but only when asked", () => {
+    const expired = jwt.sign({ sid: "s1", jti: "t1", type: "refresh", exp: Math.floor(Date.now() / 1000) - 10 }, SECRET, { subject: "u1", audience: "user", issuer: "ecommerce-api" });
+    assert.throws(() => verifyRefreshToken(expired, SECRET, "user"), jwt.TokenExpiredError);
+    assert.equal(verifyRefreshToken(expired, SECRET, "user", { ignoreExpiration: true }).sessionId, "s1");
   });
 });
 
@@ -46,11 +58,11 @@ describe("passwords", () => {
   it("hashes with argon2id and verifies", async () => {
     const hash = await hashPassword("correct horse battery");
     assert.match(hash, /^\$argon2id\$/);
-    assert.equal(await verifyPassword(hash, "correct horse battery"), true);
-    assert.equal(await verifyPassword(hash, "wrong password!!"), false);
+    assert.equal(await verifyPassword("correct horse battery", hash), true);
+    assert.equal(await verifyPassword("wrong password!!", hash), false);
   });
 
-  it("never succeeds for a missing account", async () => {
-    assert.equal(await verifyPassword(undefined, "anything at all"), false);
+  it("never succeeds against a malformed hash", async () => {
+    assert.equal(await verifyPassword("anything at all", "not-a-hash"), false);
   });
 });

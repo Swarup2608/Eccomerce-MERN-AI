@@ -1,23 +1,21 @@
 import { randomBytes } from "node:crypto";
-import { argon2id, hash, verify } from "argon2";
+import argon2 from "argon2";
 
-// OWASP-recommended argon2id parameters (19 MiB, 2 iterations, 1 lane).
-const ARGON2_OPTIONS = { type: argon2id, memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
-
-let dummyHash: Promise<string> | undefined;
-
-export function hashPassword(password: string): Promise<string> {
-  return hash(password, ARGON2_OPTIONS);
+export async function hashPassword(password: string): Promise<string> {
+  return argon2.hash(password, { type: argon2.argon2id });
 }
 
-// When the account doesn't exist we still run a full verification against a throwaway hash,
-// so response timing can't be used to discover which emails are registered.
-export async function verifyPassword(passwordHash: string | undefined, password: string): Promise<boolean> {
-  dummyHash ??= hash(randomBytes(32).toString("hex"), ARGON2_OPTIONS);
-  const target = passwordHash ?? (await dummyHash);
+// A throwaway hash, so a missing account costs the same time as a wrong password and timing can't reveal which emails exist.
+let dummyHash: Promise<string> | undefined;
+
+export async function verifyPassword(password: string, passwordHash: string | undefined): Promise<boolean> {
   try {
-    const matches = await verify(target, password);
-    return passwordHash !== undefined && matches;
+    if (passwordHash === undefined) {
+      dummyHash ??= hashPassword(randomBytes(32).toString("hex"));
+      await argon2.verify(await dummyHash, password);
+      return false;
+    }
+    return await argon2.verify(passwordHash, password);
   } catch {
     return false;
   }

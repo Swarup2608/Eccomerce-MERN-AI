@@ -23,14 +23,15 @@ const redis = new Redis({ lazyConnect: true, enableOfflineQueue: false });
 before(async () => {
   const policies = scopePolicies(false);
   const app = createApp({
-    config: { corsOrigins: [ALLOWED_ORIGIN], trustProxy: 0, rateLimit: { windowMs: 60_000, max: RATE_LIMIT_MAX }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false } },
+    config: { storefrontUrl: ALLOWED_ORIGIN, adminUrl: "http://localhost:3001", trustProxy: 0, rateLimit: { windowMs: 60_000, max: RATE_LIMIT_MAX }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false }, adminAllowedIps: [] },
     logger: createLogger("error"),
     rateLimitStore: new MemoryRateLimitStore(),
     healthChecks: {
       mongo: () => Promise.resolve(),
       redis: () => (redisUp ? Promise.resolve() : Promise.reject(new Error("down"))),
     },
-    authService: new AuthService(redis, policies, SECRETS, createLogger("error")),
+    authService: new AuthService({ redis, policies, secrets: SECRETS, storefrontUrl: ALLOWED_ORIGIN, adminUrl: "http://localhost:3001", logger: createLogger("error"), mailer: { send: () => Promise.resolve() }, audit: { record: () => undefined } }),
+    audit: { record: () => undefined },
   });
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));

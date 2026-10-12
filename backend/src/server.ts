@@ -1,11 +1,14 @@
 import { createServer } from "node:http";
 import { createApp } from "./app.js";
-import { loadConfig } from "./config/env.js";
+import { deploymentWarnings, loadConfig } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
+import { createMailer } from "./lib/mailer.js";
 import { connectMongo, disconnectMongo, pingMongo } from "./lib/mongo.js";
 import { createRedisClient, pingRedis } from "./lib/redis.js";
 import { RedisRateLimitStore } from "./middleware/rate-limit.js";
 import { scopePolicies } from "./modules/auth/auth.policy.js";
+import { createAuditRecorder } from "./modules/audit/audit.service.js";
+import { AuditEvent } from "./modules/audit/audit.model.js";
 import { AuthService } from "./modules/auth/auth.service.js";
 import { User } from "./modules/users/user.model.js";
 
@@ -15,12 +18,24 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config.logLevel, { service: "backend", env: config.env });
 
+  for (const warning of deploymentWarnings(config)) logger.warn("Deployment check", { warning });
+
   const redis = createRedisClient(config, logger);
   await Promise.all([connectMongo(config, logger), redis.connect()]);
   // The unique email/username/phone indexes are a security guarantee, so build them even when autoIndex is off.
-  await User.createIndexes();
+  await Promise.all([User.createIndexes(), AuditEvent.createIndexes()]);
 
-  const authService = new AuthService(redis, scopePolicies(config.auth.secureCookies), { user: config.auth.accessTokenSecret, admin: config.auth.adminAccessTokenSecret }, logger.child({ component: "auth" }));
+  const audit = createAuditRecorder(logger);
+  const authService = new AuthService({
+    redis,
+    policies: scopePolicies(config.auth.secureCookies),
+    secrets: { user: config.auth.accessTokenSecret, admin: config.auth.adminAccessTokenSecret },
+    storefrontUrl: config.storefrontUrl,
+    adminUrl: config.adminUrl,
+    logger: logger.child({ component: "auth" }),
+    mailer: createMailer(config, logger),
+    audit,
+  });
 
   const app = createApp({
     config,
@@ -28,6 +43,7 @@ async function main(): Promise<void> {
     rateLimitStore: new RedisRateLimitStore(redis),
     healthChecks: { mongo: pingMongo, redis: () => pingRedis(redis) },
     authService,
+    audit,
   });
 
   const server = createServer(app);

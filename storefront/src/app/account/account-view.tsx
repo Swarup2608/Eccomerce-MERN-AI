@@ -1,9 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ChangePasswordForm } from "@/components/change-password-form";
 import { FormError } from "@/components/form-field";
+import { TwoStepForm } from "@/components/two-step-form";
 import { errorMessage, getCurrentUser, logout, type User } from "@/lib/auth";
+import { setSession } from "@/lib/session";
 
 // The API is the real gatekeeper; this only decides what to render.
 export function AccountView() {
@@ -12,24 +15,34 @@ export function AccountView() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const load = useCallback(
+    () =>
+      getCurrentUser().then(
+        (current) => {
+          setSession(current);
+          if (current) setUser(current);
+          else router.replace("/login");
+        },
+        // Rate limits and outages are temporary: offer a retry instead of a dead end.
+        (err: unknown) => setError(errorMessage(err)),
+      ),
+    [router],
+  );
+
   useEffect(() => {
-    let active = true;
-    getCurrentUser()
-      .then((current) => {
-        if (!active) return;
-        if (current) setUser(current);
-        else router.replace("/login");
-      })
-      .catch((err: unknown) => active && setError(errorMessage(err)));
-    return () => {
-      active = false;
-    };
-  }, [router]);
+    void load();
+  }, [load]);
+
+  function retry() {
+    setError(null);
+    void load();
+  }
 
   async function signOut(everywhere: boolean) {
     setPending(true);
     try {
       await logout(everywhere);
+      setSession(null);
       router.replace("/login");
     } catch (err) {
       setError(errorMessage(err));
@@ -37,13 +50,22 @@ export function AccountView() {
     }
   }
 
-  if (error) return <FormError message={error} />;
+  if (error && !user) {
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <FormError message={error} />
+        <button type="button" onClick={retry} className="rounded-md border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20">
+          Try again
+        </button>
+      </div>
+    );
+  }
   if (!user) return <p className="text-sm text-black/60 dark:text-white/60">Loading your account...</p>;
 
   const rows: [string, string][] = [
     ["Name", `${user.firstName} ${user.lastName}`],
     ["Username", user.userName],
-    ["Email", `${user.email}${user.emailVerified ? "" : " (unverified)"}`],
+    ["Email", user.email],
     ["Mobile", user.phoneNumber ? `${user.phoneNumber}${user.phoneVerified ? "" : " (unverified)"}` : "Not added"],
   ];
 
@@ -54,6 +76,8 @@ export function AccountView() {
         <p className="mt-1 text-sm text-black/60 dark:text-white/60">Manage your profile and sessions.</p>
       </div>
 
+      <FormError message={error} />
+
       <dl className="divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/10">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-4 px-4 py-3 text-sm">
@@ -62,6 +86,19 @@ export function AccountView() {
           </div>
         ))}
       </dl>
+
+      <section>
+        <h2 className="mb-1 text-lg font-medium">Two-step sign-in</h2>
+        <p className="mb-4 text-sm text-black/60 dark:text-white/60">
+          {user.mfaEnabled ? "On: signing in also needs a code we email you." : "Off: your password alone signs you in. Turn it on to also require a code we email you."}
+        </p>
+        <TwoStepForm enabled={user.mfaEnabled} onChanged={(updated) => { setUser(updated); setSession(updated); }} />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-medium">Change password</h2>
+        <ChangePasswordForm />
+      </section>
 
       <div className="flex flex-wrap gap-3">
         <button type="button" disabled={pending} onClick={() => signOut(false)} className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60">

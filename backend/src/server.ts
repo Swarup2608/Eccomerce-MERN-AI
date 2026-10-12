@@ -10,6 +10,8 @@ import { scopePolicies } from "./modules/auth/auth.policy.js";
 import { createAuditRecorder } from "./modules/audit/audit.service.js";
 import { AuditEvent } from "./modules/audit/audit.model.js";
 import { AuthService } from "./modules/auth/auth.service.js";
+import { COMMERCE_MODELS, createCommerce } from "./modules/commerce.js";
+import { R2Storage } from "./lib/storage.js";
 import { User } from "./modules/users/user.model.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -23,7 +25,7 @@ async function main(): Promise<void> {
   const redis = createRedisClient(config, logger);
   await Promise.all([connectMongo(config, logger), redis.connect()]);
   // The unique email/username/phone indexes are a security guarantee, so build them even when autoIndex is off.
-  await Promise.all([User.createIndexes(), AuditEvent.createIndexes()]);
+  await Promise.all([User.createIndexes(), AuditEvent.createIndexes(), ...COMMERCE_MODELS.map((model) => model.createIndexes())]);
 
   const audit = createAuditRecorder(logger);
   const authService = new AuthService({
@@ -37,6 +39,9 @@ async function main(): Promise<void> {
     audit,
   });
 
+  if (!config.r2) logger.warn("R2 is not configured: product image uploads are disabled");
+  const commerce = createCommerce({ logger, audit, storage: config.r2 ? new R2Storage(config.r2) : undefined });
+
   const app = createApp({
     config,
     logger,
@@ -44,6 +49,7 @@ async function main(): Promise<void> {
     healthChecks: { mongo: pingMongo, redis: () => pingRedis(redis) },
     authService,
     audit,
+    commerce,
   });
 
   const server = createServer(app);

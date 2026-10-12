@@ -10,6 +10,12 @@ const isExactOrigin = (value: string): boolean => URL.canParse(value) && ["http:
 
 const originSchema = z.string().trim().refine(isExactOrigin, "must be an exact origin like https://shop.example.com (no path or trailing slash)");
 
+const INTEGRATION_GROUPS = [
+  ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL"],
+  ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET"],
+  ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+] as const;
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -34,6 +40,16 @@ const envSchema = z
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     EMAIL_FROM: z.string().trim().min(3).optional(),
+    R2_ACCOUNT_ID: z.string().trim().regex(/^[a-f0-9]{32}$/, "must be the 32-character Cloudflare account id").optional(),
+    R2_ACCESS_KEY_ID: z.string().trim().min(1).optional(),
+    R2_SECRET_ACCESS_KEY: z.string().trim().min(1).optional(),
+    R2_BUCKET: z.string().trim().regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/, "must be a valid bucket name").optional(),
+    R2_PUBLIC_URL: originSchema.optional(),
+    RAZORPAY_KEY_ID: z.string().trim().regex(/^rzp_(test|live)_[A-Za-z0-9]+$/, "must look like rzp_test_... or rzp_live_...").optional(),
+    RAZORPAY_KEY_SECRET: z.string().trim().min(1).optional(),
+    RAZORPAY_WEBHOOK_SECRET: z.string().trim().min(1).optional(),
+    STRIPE_SECRET_KEY: z.string().trim().regex(/^sk_(test|live)_[A-Za-z0-9]+$/, "must look like sk_test_... or sk_live_...").optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().trim().regex(/^whsec_[A-Za-z0-9]+$/, "must look like whsec_...").optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && !env.STOREFRONT_URL.startsWith("https://")) {
@@ -48,6 +64,11 @@ const envSchema = z
     }
     if (Boolean(env.SMTP_USER) !== Boolean(env.SMTP_PASS)) {
       ctx.addIssue({ code: "custom", path: ["SMTP_USER"], message: "SMTP_USER and SMTP_PASS must be set together" });
+    }
+    // Each integration is all-or-nothing: a half-configured one would fail at the worst moment (mid-upload or mid-checkout).
+    for (const group of INTEGRATION_GROUPS) {
+      const set = group.filter((name) => Boolean(env[name]));
+      if (set.length > 0 && set.length < group.length) ctx.addIssue({ code: "custom", path: [group.find((name) => !env[name]) ?? group[0]], message: `${group.join(", ")} must be set together` });
     }
     if (env.ACCESS_TOKEN_SECRET === env.ADMIN_ACCESS_TOKEN_SECRET) {
       ctx.addIssue({ code: "custom", path: ["ADMIN_ACCESS_TOKEN_SECRET"], message: "must differ from ACCESS_TOKEN_SECRET" });
@@ -71,6 +92,29 @@ export interface AppConfig {
   adminAllowedIps: readonly string[];
   apiPublicUrl: string | undefined;
   mail: { host: string | undefined; port: number; secure: boolean; user: string | undefined; pass: string | undefined; from: string };
+  // Each integration is undefined when it is not configured; the feature then answers 503 instead of failing at startup.
+  r2: R2Config | undefined;
+  razorpay: RazorpayConfig | undefined;
+  stripe: StripeConfig | undefined;
+}
+
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  publicUrl: string;
+}
+
+export interface RazorpayConfig {
+  keyId: string;
+  keySecret: string;
+  webhookSecret: string;
+}
+
+export interface StripeConfig {
+  secretKey: string;
+  webhookSecret: string;
 }
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -126,5 +170,12 @@ export function loadConfig(): AppConfig {
     adminAllowedIps: Object.freeze(env.ADMIN_ALLOWED_IPS),
     apiPublicUrl: env.API_PUBLIC_URL,
     mail: Object.freeze({ host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE, user: env.SMTP_USER || undefined, pass: env.SMTP_PASS || undefined, from: env.EMAIL_FROM ?? "Storefront <no-reply@localhost>" }),
+    r2: env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL
+      ? Object.freeze({ accountId: env.R2_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET, publicUrl: env.R2_PUBLIC_URL })
+      : undefined,
+    razorpay: env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET && env.RAZORPAY_WEBHOOK_SECRET
+      ? Object.freeze({ keyId: env.RAZORPAY_KEY_ID, keySecret: env.RAZORPAY_KEY_SECRET, webhookSecret: env.RAZORPAY_WEBHOOK_SECRET })
+      : undefined,
+    stripe: env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET ? Object.freeze({ secretKey: env.STRIPE_SECRET_KEY, webhookSecret: env.STRIPE_WEBHOOK_SECRET }) : undefined,
   });
 }

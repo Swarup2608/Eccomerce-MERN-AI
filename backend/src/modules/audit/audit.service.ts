@@ -8,7 +8,7 @@ export interface AuditRecorder {
 }
 
 // Events worth an alert: they are also written to the log at warn level so a log-based alert can match "security":true.
-const ALERT_EVENTS = new Set<AuditEventName>(["login_locked", "mfa_failure", "refresh_reuse", "admin_ip_blocked", "account_blocked", "mfa_disabled"]);
+const ALERT_EVENTS = new Set<AuditEventName>(["login_locked", "mfa_failure", "refresh_reuse", "admin_ip_blocked", "account_blocked", "mfa_disabled", "payment_amount_mismatch", "webhook_signature_invalid"]);
 
 // Fire-and-forget: a failing audit write must never block or fail the user's request, but it is logged loudly.
 export function createAuditRecorder(logger: Logger): AuditRecorder {

@@ -9,10 +9,17 @@ import type { RateLimitStore } from "./middleware/rate-limit.js";
 import { requestContext } from "./middleware/request-context.js";
 import { rejectUnsafeKeys } from "./middleware/sanitize.js";
 import { adminIpGuard, corsPolicy, noStore, originGuard, securityHeaders } from "./middleware/security.js";
+import { publicCache } from "./middleware/cache.js";
+import { adminRoutes } from "./modules/admin/admin.routes.js";
 import { createAuthController } from "./modules/auth/auth.controller.js";
 import { adminAuthRoutes, userAuthRoutes } from "./modules/auth/auth.routes.js";
 import type { AuditRecorder } from "./modules/audit/audit.service.js";
 import type { AuthService } from "./modules/auth/auth.service.js";
+import { createCategoryController } from "./modules/categories/category.controller.js";
+import { categoryRoutes } from "./modules/categories/category.routes.js";
+import type { CommerceServices } from "./modules/commerce.js";
+import { createProductController } from "./modules/products/product.controller.js";
+import { productRoutes } from "./modules/products/product.routes.js";
 import { healthRouter } from "./routes/health.js";
 import type { HealthCheck } from "./routes/health.js";
 
@@ -23,12 +30,14 @@ export interface AppDependencies {
   healthChecks: Record<string, HealthCheck>;
   authService: AuthService;
   audit: AuditRecorder;
+  commerce: CommerceServices;
 }
 
 const JSON_BODY_LIMIT = "100kb";
 const AUTH_RATE_LIMIT = { windowMs: 15 * 60 * 1000, max: 50 };
+const CATALOG_CACHE_SEC = 60;
 
-export function createApp({ config, logger, rateLimitStore, healthChecks, authService, audit }: AppDependencies): Express {
+export function createApp({ config, logger, rateLimitStore, healthChecks, authService, audit, commerce }: AppDependencies): Express {
   const app = express();
 
   app.disable("x-powered-by");
@@ -55,6 +64,10 @@ export function createApp({ config, logger, rateLimitStore, healthChecks, authSe
   app.use("/api/v1/admin", adminIpGuard(config.adminAllowedIps, (ip) => audit.record("admin_ip_blocked", { scope: "admin", ip })));
   app.use("/api/v1/auth", userAuthRoutes(authController, authService, authLimiter));
   app.use("/api/v1/admin/auth", adminAuthRoutes(authController, authService, authLimiter));
+  app.use("/api/v1/admin", adminRoutes(commerce, authService));
+
+  app.use("/api/v1/categories", publicCache(CATALOG_CACHE_SEC), categoryRoutes(createCategoryController(commerce.categories)));
+  app.use("/api/v1/products", publicCache(CATALOG_CACHE_SEC), productRoutes(createProductController(commerce.products, commerce.productHasOrders)));
 
   const api = express.Router();
   api.get("/", (_req, res) => {

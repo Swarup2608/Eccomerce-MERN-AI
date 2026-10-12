@@ -16,6 +16,8 @@ import type { AuditEntry, AuditRecorder } from "../../modules/audit/audit.servic
 import { scopePolicies } from "../../modules/auth/auth.policy.js";
 import { AuthService } from "../../modules/auth/auth.service.js";
 import { User } from "../../modules/users/user.model.js";
+import { COMMERCE_MODELS, createCommerce, type CommerceServices } from "../../modules/commerce.js";
+import { MemoryStorage } from "../../lib/storage.js";
 
 // CI provides service containers through these two variables; locally the harness starts redis-server and mongod itself.
 const EXTERNAL = { redis: process.env.TEST_REDIS_URL, mongo: process.env.TEST_MONGODB_URI };
@@ -102,7 +104,7 @@ export async function startInfra(): Promise<Infra> {
   await waitFor(async () => {
     await mongoose.connect(`mongodb://127.0.0.1:${mongoPort}`, { dbName: "auth_tests", serverSelectionTimeoutMS: 1_000 });
   }, "mongod");
-  await Promise.all([User.createIndexes(), AuditEvent.createIndexes()]);
+  await Promise.all([User.createIndexes(), AuditEvent.createIndexes(), ...COMMERCE_MODELS.map((model) => model.createIndexes())]);
 
   return {
     redis,
@@ -120,7 +122,7 @@ async function connectExternal(redisUrl: string, mongoUri: string): Promise<Infr
   await redis.flushdb();
   await mongoose.connect(mongoUri, { dbName: "auth_tests" });
   await mongoose.connection.dropDatabase();
-  await Promise.all([User.createIndexes(), AuditEvent.createIndexes()]);
+  await Promise.all([User.createIndexes(), AuditEvent.createIndexes(), ...COMMERCE_MODELS.map((model) => model.createIndexes())]);
   return {
     redis,
     stop: async () => {
@@ -135,6 +137,8 @@ export interface TestApp {
   mailer: MemoryMailer;
   audit: MemoryAudit;
   service: AuthService;
+  commerce: CommerceServices;
+  storage: MemoryStorage;
   stop(): Promise<void>;
 }
 
@@ -143,6 +147,8 @@ export async function startApp(redis: Redis, options: { adminAllowedIps?: string
   const audit = new MemoryAudit();
   const logger = createLogger("error");
   const service = new AuthService({ redis, policies: scopePolicies(false), secrets: SECRETS, storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, logger, mailer, audit });
+  const storage = new MemoryStorage();
+  const commerce = createCommerce({ logger, audit, storage });
   const app = createApp({
     // trustProxy 1 lets each test client pick its own "IP" with X-Forwarded-For.
     config: { storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, trustProxy: 1, rateLimit: { windowMs: 60_000, max: 100_000 }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false }, adminAllowedIps: options.adminAllowedIps ?? [] },
@@ -151,10 +157,11 @@ export async function startApp(redis: Redis, options: { adminAllowedIps?: string
     healthChecks: {},
     authService: service,
     audit,
+    commerce,
   });
   const server: Server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));
-  return { baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, mailer, audit, service, stop: () => new Promise<void>((resolve) => server.close(() => resolve())) };
+  return { baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, mailer, audit, service, commerce, storage, stop: () => new Promise<void>((resolve) => server.close(() => resolve())) };
 }
 
 interface StoredCookie {
@@ -176,7 +183,7 @@ export class Client {
 
   // Response bodies are untyped JSON; tests assert on their shape directly.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async request(method: "GET" | "POST", path: string, body?: unknown): Promise<{ status: number; body: any }> {
+  async request(method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE", path: string, body?: unknown): Promise<{ status: number; body: any }> {
     const cookie = [...this.jar].filter(([, stored]) => path.startsWith(stored.path)).map(([name, stored]) => `${name}=${stored.value}`).join("; ");
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
@@ -197,6 +204,9 @@ export class Client {
 
   post = (path: string, body?: unknown) => this.request("POST", path, body ?? {});
   get = (path: string) => this.request("GET", path);
+  patch = (path: string, body?: unknown) => this.request("PATCH", path, body ?? {});
+  put = (path: string, body?: unknown) => this.request("PUT", path, body ?? {});
+  delete = (path: string) => this.request("DELETE", path);
   cookie = (name: string): string | undefined => this.jar.get(name)?.value;
   setCookie(name: string, value: string, path: string): void {
     this.jar.set(name, { value, path });

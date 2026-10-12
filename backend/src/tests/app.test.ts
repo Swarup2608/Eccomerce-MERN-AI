@@ -8,6 +8,7 @@ import { createLogger } from "../lib/logger.js";
 import { MemoryRateLimitStore, clientKey } from "../middleware/rate-limit.js";
 import { scopePolicies } from "../modules/auth/auth.policy.js";
 import { AuthService } from "../modules/auth/auth.service.js";
+import { createCommerce } from "../modules/commerce.js";
 import { signAccessToken } from "../utils/tokens.js";
 
 const ALLOWED_ORIGIN = "http://localhost:3000";
@@ -32,6 +33,7 @@ before(async () => {
     },
     authService: new AuthService({ redis, policies, secrets: SECRETS, storefrontUrl: ALLOWED_ORIGIN, adminUrl: "http://localhost:3001", logger: createLogger("error"), mailer: { send: () => Promise.resolve() }, audit: { record: () => undefined } }),
     audit: { record: () => undefined },
+    commerce: createCommerce({ logger: createLogger("error"), audit: { record: () => undefined }, storage: undefined }),
   });
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", () => resolve()));

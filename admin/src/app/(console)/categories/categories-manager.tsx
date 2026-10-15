@@ -6,6 +6,7 @@ import { Badge, Button, Card, Field, Input, Loading, Notice, PageHeader, Select,
 import { adminApi, flattenTree, type AttributeDef, type AttributeType, type CategoryDetail, type CategoryInput, type CategoryNode } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/auth";
 import { useLoad } from "@/lib/use-load";
+import { confirmDialog } from "@/components/dialog";
 
 const TYPES: { value: AttributeType; label: string }[] = [
   { value: "select", label: "Single choice" },
@@ -146,7 +147,7 @@ function CategoryEditor({ category, tree, onSaved, onDeleted }: { category: Cate
   }
 
   async function remove() {
-    if (!category || !window.confirm(`Delete "${category.name}"? This cannot be undone.`)) return;
+    if (!category || !(await confirmDialog({ title: `Delete “${category.name}”?`, message: "This cannot be undone.", confirmLabel: "Delete category", tone: "danger" }))) return;
     setPending(true);
     try {
       await adminApi.deleteCategory(category.id);

@@ -8,6 +8,7 @@ import { adminApi, ORDER_STATUS_LABELS } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/auth";
 import { formatDate, formatInr } from "@/lib/money";
 import { useLoad } from "@/lib/use-load";
+import { confirmDialog } from "@/components/dialog";
 
 export function CustomerDetailView({ customerId }: { customerId: string }) {
   const load = useCallback(() => adminApi.customer(customerId), [customerId]);
@@ -20,7 +21,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
   async function toggle() {
     if (!customer) return;
-    if (!suspended && !window.confirm(`Suspend ${customer.firstName}? They are signed out everywhere and cannot sign in until reactivated.`)) return;
+    if (!suspended && !(await confirmDialog({ title: `Suspend ${customer.firstName}?`, message: "They are signed out everywhere and cannot sign in until reactivated.", confirmLabel: "Suspend customer", tone: "danger" }))) return;
     setPending(true);
     try {
       setData(await adminApi.setCustomerStatus(customer.id, suspended ? "active" : "suspended"));

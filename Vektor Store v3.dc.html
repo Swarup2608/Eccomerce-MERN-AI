@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/industry-8d73d954-2ba9-4ed0-a747-9a69caf33582/styles.css">
+<script src="_ds/industry-8d73d954-2ba9-4ed0-a747-9a69caf33582/_ds_bundle.js"></script>
+<style>
+html,body{margin:0;}
+body{overflow-x:hidden;}
+a{color:var(--color-text);}
+a:hover{color:var(--color-accent-700);}
+input[type=checkbox]{accent-color:var(--color-text);width:16px;height:16px;}
+@keyframes vk-spin{from{transform:rotateX(-22deg) rotateY(0deg)}to{transform:rotateX(-22deg) rotateY(360deg)}}
+@keyframes vk-spin-r{from{transform:rotateX(45deg) rotateY(360deg) rotateZ(45deg)}to{transform:rotateX(45deg) rotateY(0deg) rotateZ(45deg)}}
+@keyframes vk-ring{from{transform:rotateX(74deg) rotateZ(0deg)}to{transform:rotateX(74deg) rotateZ(360deg)}}
+@keyframes vk-ring2{from{transform:rotateX(74deg) rotateY(18deg) rotateZ(360deg)}to{transform:rotateX(74deg) rotateY(18deg) rotateZ(0deg)}}
+@keyframes vk-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes vk-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes vk-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);">
+<div ref="{{ mainRef }}">
+<sc-if value="{{ is_auth }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Login / Register" style="position:relative;height:100vh;min-height:680px;overflow:hidden;">
+  <div onMouseMove="{{ onHeroMove }}" onMouseLeave="{{ onHeroLeave }}" style="position:absolute;top:0;left:0;width:50%;height:100%;z-index:2;transform:translateX({{ artX }});transition:transform 1s cubic-bezier(.75,0,.2,1);background:var(--color-surface);border-right:1px solid var(--color-divider);border-left:1px solid var(--color-divider);overflow:hidden;">
+    <div class="{{ edClass }}" style="position:absolute;inset:0;background:var(--color-surface);"><img ref="{{ stageRef }}" src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" alt="" style="position:absolute;left:-4%;top:-4%;width:108%;height:108%;object-fit:cover;transition:translate .9s cubic-bezier(.2,.7,.2,1);"></div>
+    <div style="position:relative;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:40px;gap:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--color-bg);padding:12px 16px;border-radius:var(--box-r,0px);">
+        <div style="display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:22px;letter-spacing:.18em;">
+          <span style="width:14px;height:14px;border:2px solid var(--color-accent);transform:rotate(45deg);"></span>VEKTOR
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <sc-for list="{{ themes }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.pick }}" style="font:inherit;font-size:12px;padding:5px 10px;cursor:pointer;border:1px solid var(--color-divider);border-radius:var(--pill,0px);background:{{ t.bg }};color:{{ t.color }};">{{ t.name }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="max-width:460px;display:flex;flex-direction:column;gap:12px;background:var(--color-bg);padding:28px;border-radius:var(--box-r,0px);">
+        <span style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700);">Members · Drop 26</span>
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}"><h1 style="font-size:clamp(36px,4.4vw,60px);line-height:1;margin:0;text-wrap:balance;">Welcome back. Your bag is where you left it.</h1></sc-if>
+        <sc-if value="{{ isReg }}" hint-placeholder-val="{{ false }}"><h1 style="font-size:clamp(36px,4.4vw,60px);line-height:1;margin:0;text-wrap:balance;">Members see every drop 48 hours early.</h1></sc-if>
+        <p style="margin:0;font-size:15px;color:color-mix(in srgb,var(--color-text) 66%,transparent);max-width:360px;">Free returns, saved carts across devices and order tracking from six independent makers.</p>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;top:0;left:50%;width:50%;height:100%;overflow:hidden;transform:translateX({{ formX }});transition:transform 1s cubic-bezier(.75,0,.2,1);">
+    <div style="height:200%;transform:translateY({{ trackY }});transition:transform 1.1s cubic-bezier(.75,0,.2,1) .08s;">
+      <section style="height:50%;display:flex;align-items:center;padding:40px clamp(24px,6vw,96px);">
+        <form onSubmit="{{ authSubmit }}" style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px;">
+          <div>
+            <span style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700);">01 / Sign in</span>
+            <h2 style="font-size:40px;margin:8px 0 6px;">Sign in</h2>
+            <p style="margin:0;font-size:14px;color:color-mix(in srgb,var(--color-text) 62%,transparent);">New to Vektor? <a href="#" onClick="{{ toReg }}">Create an account</a></p>
+          </div>
+          <div class="field"><label>Email</label><input class="input" type="email" autocomplete="email" placeholder="you@example.com" value="{{ login.email }}" onChange="{{ onLEmail }}" style="min-height:44px;"></div>
+          <div class="field">
+            <label style="display:flex;justify-content:space-between;">Password <a href="#" style="font-size:12px;">Forgot?</a></label>
+            <div style="position:relative;"><input class="input" type="{{ pwType }}" autocomplete="current-password" placeholder="••••••••" value="{{ login.pw }}" onChange="{{ onLPw }}" style="min-height:44px;padding-right:64px;"><button type="button" onClick="{{ togglePw }}" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;font:inherit;font-size:12px;color:var(--color-accent-700);cursor:pointer;padding:6px;">{{ pwToggle }}</button></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;"><input type="checkbox" checked="{{ true }}" onChange="{{ togglePw }}">Keep me signed in</label>
+          <sc-if value="{{ hasAuthErr }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:13px;color:var(--color-accent-700);border-left:2px solid var(--color-accent);padding-left:10px;">{{ authErr }}</div></sc-if>
+          <button type="submit" class="btn btn-primary" style="min-height:48px;justify-content:space-between;font-size:15px;"><span>Sign in</span><span>→</span></button>
+          <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent);"><span style="flex:1;height:1px;background:var(--color-divider);"></span>or<span style="flex:1;height:1px;background:var(--color-divider);"></span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button type="button" class="btn btn-secondary" onClick="{{ guest }}" style="min-height:44px;">Google</button>
+            <button type="button" class="btn btn-secondary" onClick="{{ guest }}" style="min-height:44px;">Apple</button>
+          </div>
+          <a href="#" onClick="{{ guest }}" style="font-size:13px;">Continue as guest →</a>
+        </form>
+      </section>
+      <section style="height:50%;display:flex;align-items:center;padding:40px clamp(24px,6vw,96px);">
+        <form onSubmit="{{ authSubmit }}" style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <span style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700);">02 / Register</span>
+            <h2 style="font-size:40px;margin:8px 0 6px;">Create account</h2>
+            <p style="margin:0;font-size:14px;color:color-mix(in srgb,var(--color-text) 62%,transparent);">Already a member? <a href="#" onClick="{{ toLogin }}">Sign in</a></p>
+          </div>
+          <div class="field"><label>Full name</label><input class="input" autocomplete="name" placeholder="Alex Morgan" value="{{ reg.name }}" onChange="{{ onRName }}" style="min-height:44px;"></div>
+          <div class="field"><label>Email</label><input class="input" type="email" autocomplete="email" placeholder="you@example.com" value="{{ reg.email }}" onChange="{{ onREmail }}" style="min-height:44px;"></div>
+          <div class="field">
+            <label>Password</label>
+            <input class="input" type="{{ pwType }}" autocomplete="new-password" placeholder="8+ characters" value="{{ reg.pw }}" onChange="{{ onRPw }}" style="min-height:44px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+              <sc-for list="{{ pwBars }}" as="b" hint-placeholder-count="4"><span style="flex:1;height:3px;background:{{ b.bg }};transition:background .3s;"></span></sc-for>
+              <span style="font-size:12px;min-width:76px;text-align:right;color:color-mix(in srgb,var(--color-text) 60%,transparent);">{{ pwLabel }}</span>
+            </div>
+          </div>
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer;color:color-mix(in srgb,var(--color-text) 72%,transparent);"><input type="checkbox" checked="{{ true }}" onChange="{{ togglePw }}" style="margin-top:2px;">Email me early access to drops. Unsubscribe any time.</label>
+          <sc-if value="{{ hasAuthErr }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:13px;color:var(--color-accent-700);border-left:2px solid var(--color-accent);padding-left:10px;">{{ authErr }}</div></sc-if>
+          <button type="submit" class="btn btn-primary" style="min-height:48px;justify-content:space-between;font-size:15px;"><span>Create account</span><span>→</span></button>
+          <p style="margin:0;font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent);">By continuing you agree to the Terms and Privacy Policy.</p>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>
+</sc-if>
+<sc-if value="{{ notAuth }}" hint-placeholder-val="{{ false }}">
+<header onMouseLeave="{{ closeMenu }}" style="position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--color-bg) 84%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--color-divider);">
+  <div style="border-bottom:1px solid var(--color-divider);font-size:12px;">
+    <div style="max-width:1400px;margin:0 auto;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;color:color-mix(in srgb,var(--color-text) 70%,transparent);">
+        <span>Free shipping over $150</span><span>30-day returns</span>
+        <a href="#" onClick="{{ goSale }}" style="color:var(--color-accent-700);text-decoration:none;white-space:nowrap;">Sale ends in {{ cd.d }}d {{ cd.h }}:{{ cd.m }}:{{ cd.s }}</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-right:4px;">Theme</span>
+        <sc-for list="{{ themes }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.pick }}" title="{{ t.note }}" style="font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;border:1px solid var(--color-divider);border-radius:var(--pill,0px);background:{{ t.bg }};color:{{ t.color }};">{{ t.name }}</button>
+        </sc-for>
+        <span style="width:1px;height:16px;background:var(--color-divider);margin:0 6px;"></span>
+        <span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-right:2px;">Palette</span>
+        <sc-for list="{{ palettes }}" as="pl" hint-placeholder-count="4">
+          <button onClick="{{ pl.pick }}" title="{{ pl.name }}" aria-label="{{ pl.name }} palette" style="width:18px;height:18px;border-radius:50%;cursor:pointer;padding:0;border:1px solid var(--color-divider);background:{{ pl.sw }};box-shadow:{{ pl.ring }};"></button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1440px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;min-height:72px;">
+    <nav style="display:flex;align-items:stretch;align-self:stretch;gap:0;margin-left:-14px;">
+      <button onMouseEnter="{{ openShop }}" onClick="{{ goShop }}" style="background:none;border:0;font:inherit;font-size:15px;font-weight:500;padding:0 14px;cursor:pointer;color:{{ navShop }};display:flex;align-items:center;gap:6px;min-height:48px;white-space:nowrap;">Shop<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button onMouseEnter="{{ openSale }}" onClick="{{ goSale }}" style="background:none;border:0;font:inherit;font-size:15px;font-weight:500;padding:0 14px;cursor:pointer;color:{{ navSale }};display:flex;align-items:center;gap:6px;min-height:48px;white-space:nowrap;">Sale<span style="width:6px;height:6px;border-radius:50%;background:var(--color-accent);"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button onMouseEnter="{{ openVendors }}" onClick="{{ goVendors }}" style="background:none;border:0;font:inherit;font-size:15px;font-weight:500;padding:0 14px;cursor:pointer;color:{{ navVendors }};display:flex;align-items:center;gap:6px;min-height:48px;white-space:nowrap;">Vendors<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></button>
+    </nav>
+    <a href="#" onClick="{{ goHome }}" onMouseEnter="{{ closeMenu }}" aria-label="Vektor home" style="display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-weight:700;font-size:24px;letter-spacing:.2em;color:var(--color-text);text-decoration:none;">
+      <span style="width:14px;height:14px;border:2px solid var(--color-accent);transform:rotate(45deg);"></span>VEKTOR
+    </a>
+    <div onMouseEnter="{{ closeMenu }}" style="display:flex;justify-content:flex-end;align-items:center;gap:4px;min-width:0;">
+      <button class="vk-hide-md" onClick="{{ goLimited }}" style="background:none;border:0;font:inherit;font-size:15px;font-weight:500;padding:0 12px;cursor:pointer;color:var(--color-text);min-height:44px;white-space:nowrap;">Editions</button>
+      <button class="vk-hide-md" onClick="{{ goOrders }}" style="background:none;border:0;font:inherit;font-size:15px;font-weight:500;padding:0 12px;cursor:pointer;color:{{ navOrders }};min-height:44px;white-space:nowrap;">Orders</button>
+      <button class="btn btn-ghost btn-icon" aria-label="Search" onClick="{{ goShop }}" style="width:44px;height:44px;color:var(--color-text);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+      <button class="btn btn-ghost btn-icon" aria-label="Account" onClick="{{ goAuth }}" style="width:44px;height:44px;color:var(--color-text);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></button>
+      <button class="btn btn-ghost btn-icon" aria-label="Saved items" onClick="{{ goWish }}" style="width:44px;height:44px;color:var(--color-text);position:relative;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg><sc-if value="{{ hasWish }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 4px;font-size:11px;line-height:18px;text-align:center;border-radius:9px;background:var(--color-accent);color:var(--vk-on-accent);">{{ wishCount }}</span></sc-if></button>
+      <button class="btn btn-primary" onClick="{{ goCart }}" style="gap:10px;white-space:nowrap;flex:none;margin-left:6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M6 7h12l1 14H5L6 7Z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg><span>Bag · {{ cartCount }}</span></button>
+    </div>
+  </div>
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div id="vk-mega" style="position:absolute;left:0;right:0;top:100%;background:var(--color-bg);border-bottom:1px solid var(--color-divider);border-top:1px solid var(--color-divider);box-shadow:var(--shadow-lg);">
+      <sc-if value="{{ menuShop }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:1400px;margin:0 auto;padding:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:40px;">
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;">Categories</div>
+            <sc-for list="{{ megaCats }}" as="c" hint-placeholder-count="6">
+              <a href="#" onClick="{{ c.go }}" style="display:flex;align-items:baseline;gap:12px;padding:7px 0;color:var(--color-text);text-decoration:none;font-family:var(--font-heading);font-size:22px;border-bottom:1px solid var(--color-divider);" style-hover="color:var(--color-accent-700);padding-left:6px;"><span style="font-size:11px;font-family:var(--font-body);opacity:.5;">{{ c.idx }}</span><span style="flex:1;">{{ c.name }}</span><span style="font-size:12px;font-family:var(--font-body);opacity:.55;">{{ c.count }}</span></a>
+            </sc-for>
+          </div>
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;">Shop by maker</div>
+            <sc-for list="{{ megaVendors }}" as="v" hint-placeholder-count="6">
+              <a href="#" onClick="{{ v.go }}" style="display:flex;flex-direction:column;padding:7px 0;color:var(--color-text);text-decoration:none;" style-hover="color:var(--color-accent-700);"><span style="font-size:15px;font-weight:500;">{{ v.name }}</span><span style="font-size:12px;opacity:.6;">{{ v.spec }}</span></a>
+            </sc-for>
+          </div>
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;">Collections</div>
+            <sc-for list="{{ megaColl }}" as="c" hint-placeholder-count="5">
+              <a href="#" onClick="{{ c.go }}" style="display:block;padding:8px 0;color:var(--color-text);text-decoration:none;font-size:15px;" style-hover="color:var(--color-accent-700);">{{ c.name }}</a>
+            </sc-for>
+          </div>
+          <a href="#" onClick="{{ goSale }}" style="position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:300px;padding:14px;text-decoration:none;color:var(--color-text);background:var(--color-surface);border-radius:var(--box-r,0px);overflow:hidden;"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"><span style="position:relative;display:flex;flex-direction:column;gap:6px;padding:16px;background:var(--color-bg);border-radius:var(--box-r,0px);">
+            <span class="tag tag-accent" style="align-self:flex-start;">Mid-season sale</span>
+            <span style="font-family:var(--font-heading);font-size:34px;line-height:1;">Up to 40% off</span>
+            <span style="font-size:14px;">Shop the sale →</span></span>
+          </a>
+        </div>
+      </sc-if>
+      <sc-if value="{{ menuSale }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:1400px;margin:0 auto;padding:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:40px;">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);">Ends in</div>
+            <div style="font-family:var(--font-heading);font-size:44px;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.d }}d {{ cd.h }}:{{ cd.m }}:{{ cd.s }}</div>
+            <p style="margin:0;font-size:14px;color:color-mix(in srgb,var(--color-text) 65%,transparent);max-width:280px;">Prices drop across {{ saleTotal }} products. No codes needed.</p>
+            <button class="btn btn-primary" onClick="{{ goSale }}" style="align-self:flex-start;min-height:44px;margin-top:6px;">Shop all deals →</button>
+          </div>
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;">By discount</div>
+            <sc-for list="{{ megaTiers }}" as="t" hint-placeholder-count="3">
+              <a href="#" onClick="{{ t.go }}" style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--color-divider);color:var(--color-text);text-decoration:none;font-family:var(--font-heading);font-size:24px;" style-hover="color:var(--color-accent-700);"><span>{{ t.label }}</span><span style="font-size:12px;font-family:var(--font-body);opacity:.6;">{{ t.count }} items</span></a>
+            </sc-for>
+          </div>
+          <div>
+            <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;">Biggest drops</div>
+            <sc-for list="{{ megaSaleTop }}" as="p" hint-placeholder-count="3">
+              <a href="#" onClick="{{ p.open }}" style="display:flex;gap:14px;align-items:center;padding:8px 0;color:var(--color-text);text-decoration:none;" style-hover="color:var(--color-accent-700);">
+                <span style="width:56px;height:56px;flex:none;display:block;overflow:hidden;background:var(--color-surface);border-radius:var(--box-r,0px);"><span role="img" aria-label="" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ p.img }}) center/cover no-repeat;"></span></span>
+                <span style="flex:1;display:flex;flex-direction:column;"><span style="font-weight:500;">{{ p.name }}</span><span style="font-size:13px;"><span style="font-weight:600;">{{ p.price }}</span> <span style="text-decoration:line-through;opacity:.55;">{{ p.was }}</span></span></span>
+                <span class="tag tag-accent">−{{ p.pct }}%</span>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ menuVendors }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:1400px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:20px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;border-top:1px solid var(--color-divider);border-left:1px solid var(--color-divider);">
+            <sc-for list="{{ megaVendors }}" as="v" hint-placeholder-count="6">
+              <a href="#" onClick="{{ v.go }}" style="display:flex;flex-direction:column;gap:4px;padding:20px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);color:var(--color-text);text-decoration:none;" style-hover="background:color-mix(in srgb,var(--color-accent) 8%,transparent);"><span style="font-family:var(--font-heading);font-size:22px;">{{ v.name }}</span><span style="font-size:13px;opacity:.65;">{{ v.spec }}</span><span style="font-size:13px;color:var(--color-accent-700);margin-top:8px;">Visit store →</span></a>
+            </sc-for>
+          </div>
+          <button class="btn btn-ghost" onClick="{{ goVendors }}" style="align-self:flex-start;">View all makers →</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</header>
+<sc-if value="{{ is_home }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Storefront">
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:16px;">
+    <div onMouseEnter="{{ heroPause }}" onMouseLeave="{{ heroResume }}" style="position:relative;height:calc(100vh - 150px);min-height:600px;max-height:880px;border-radius:var(--box-r,0px);overflow:hidden;background:var(--color-neutral-800);">
+      <span data-speed="0.16" style="position:absolute;left:0;right:0;top:-8%;bottom:-8%;display:block;">
+        <span data-hero-img="" role="img" aria-label="{{ hs.alt }}" style="position:absolute;inset:0;display:block;background:var(--color-neutral-800) url({{ hs.img }}) center 30%/cover no-repeat;"></span>
+      </span>
+      <span style="position:absolute;inset:0;display:block;background:linear-gradient(90deg,rgba(12,12,12,.62) 0%,rgba(12,12,12,.28) 48%,rgba(12,12,12,0) 72%),linear-gradient(0deg,rgba(12,12,12,.45) 0%,rgba(12,12,12,0) 35%);"></span>
+      <div data-px="-0.3" aria-hidden="true" style="position:absolute;left:2%;bottom:-.14em;white-space:nowrap;font-family:var(--font-heading);font-weight:800;font-size:clamp(120px,20vw,320px);line-height:1;letter-spacing:-.05em;color:rgba(255,255,255,.14);pointer-events:none;">VEKTOR · DROP 26 · VEKTOR</div>
+      <div style="position:absolute;left:clamp(24px,4vw,56px);top:clamp(28px,6vh,72px);right:24px;max-width:760px;display:flex;flex-direction:column;gap:22px;color:#fff;">
+        <span data-hero-fade="" style="white-space:nowrap;align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-accent);"></span>{{ hs.kicker }}</span>
+        <h1 style="margin:0;font-size:clamp(48px,6.8vw,112px);line-height:.95;letter-spacing:-.04em;font-weight:700;color:#fff;text-transform:uppercase;">
+          <sc-for list="{{ hs.words }}" as="w" hint-placeholder-count="4"><span style="display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.08em;margin-right:.22em;"><span data-word="" style="display:inline-block;color:{{ w.color }};-webkit-text-stroke:{{ w.stroke }};">{{ w.t }}</span></span></sc-for>
+        </h1>
+        <p data-hero-fade="" style="margin:0;font-size:18px;line-height:1.5;max-width:440px;color:rgba(255,255,255,.86);">{{ hs.sub }}</p>
+        <div data-hero-fade="" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button onClick="{{ hs.go }}" style="display:inline-flex;align-items:center;gap:6px;border:0;padding:0;background:none;cursor:pointer;font:inherit;" style-hover="opacity:.92;">
+            <span style="display:inline-flex;align-items:center;min-height:54px;padding:0 28px;border-radius:999px;background:#fff;color:#141414;font-size:16px;font-weight:600;white-space:nowrap;">{{ hs.cta }}</span>
+            <span style="width:54px;height:54px;display:grid;place-items:center;border-radius:999px;background:#fff;color:#141414;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"></path></svg></span>
+          </button>
+          <button onClick="{{ goSale }}" style="white-space:nowrap;min-height:54px;padding:0 24px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:16px;font-weight:500;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:background-color .2s;" style-hover="background:rgba(255,255,255,.22);">Explore sale</button>
+        </div>
+      </div>
+      <div style="position:absolute;top:clamp(28px,6vh,72px);right:clamp(20px,3vw,40px);display:flex;align-items:center;gap:10px;color:#fff;">
+        <span style="font-size:13px;font-variant-numeric:tabular-nums;opacity:.85;">{{ heroNum }} / 03</span>
+        <button onClick="{{ heroPrev }}" aria-label="Previous slide" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;backdrop-filter:blur(10px);" style-hover="background:#fff;color:#141414;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <button onClick="{{ heroNext }}" aria-label="Next slide" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:0;background:#fff;color:#141414;cursor:pointer;" style-hover="transform:scale(1.06);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+      </div>
+      <div data-hero-fade="" style="position:absolute;left:clamp(24px,4vw,56px);bottom:clamp(24px,4vh,44px);display:flex;align-items:center;gap:12px;color:#fff;">
+        <div style="display:flex;">
+          <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="3"><span role="img" aria-label="Member" style="width:40px;height:40px;margin-right:-10px;border-radius:999px;border:2px solid #fff;display:block;background:var(--color-surface) url({{ a.src }}) center/cover;"></span></sc-for>
+        </div>
+        <span style="font-size:13px;line-height:1.35;max-width:200px;margin-left:12px;color:rgba(255,255,255,.9);">Members shop every drop 48 hours early.</span>
+      </div>
+      <div style="position:absolute;left:50%;bottom:clamp(28px,4.5vh,50px);transform:translateX(-50%);display:flex;gap:8px;">
+        <sc-for list="{{ heroDots }}" as="d" hint-placeholder-count="3"><button onClick="{{ d.pick }}" aria-label="{{ d.label }}" style="width:{{ d.w }};height:4px;border:0;padding:0;border-radius:4px;cursor:pointer;background:{{ d.bg }};transition:width .5s cubic-bezier(.2,.7,.2,1),background-color .3s;"></button></sc-for>
+      </div>
+      <a href="#" onClick="{{ goLimited }}" data-hero-fade="" style="position:absolute;right:clamp(20px,3vw,40px);bottom:clamp(20px,4vh,40px);width:240px;aspect-ratio:16/10;border-radius:calc(var(--box-r,0px) * .7);overflow:hidden;display:block;border:2px solid rgba(255,255,255,.7);text-decoration:none;" style-hover="transform:scale(1.03);">
+        <span role="img" aria-label="Drop 26 film" style="position:absolute;inset:0;display:block;background:var(--color-neutral-800) url({{ filmImg }}) center/cover;"></span>
+        <span style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.25);"><span style="width:52px;height:52px;border-radius:999px;display:grid;place-items:center;background:#fff;color:#141414;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span></span>
+        <span style="position:absolute;left:10px;bottom:8px;font-size:12px;font-weight:600;color:#fff;">Watch the Drop 26 film</span>
+      </a>
+    </div>
+  </section>
+  <div style="overflow:hidden;padding:18px 0;margin-top:16px;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);font-family:var(--font-heading);font-size:18px;">{{ marquee }}</div>
+
+  <section data-reveal="" style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:56px;display:flex;flex-direction:column;gap:24px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <label style="position:relative;display:inline-flex;align-items:center;">
+        <select class="input" value="{{ homeChip }}" onChange="{{ onHomeCat }}" aria-label="Categories" style="width:auto;min-width:180px;padding-right:40px;appearance:none;-webkit-appearance:none;background:var(--color-surface);border-color:transparent;font-weight:500;cursor:pointer;">
+          <option value="all">All categories</option><option value="audio">Audio</option><option value="wear">Watches</option><option value="shoes">Footwear</option><option value="carry">Carry</option><option value="desk">Tech</option><option value="optics">Eyewear</option>
+        </select>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;right:14px;pointer-events:none;"><path d="m6 9 6 6 6-6"></path></svg>
+      </label>
+      <div style="position:relative;flex:1 1 220px;max-width:380px;">
+        <input class="input" type="search" placeholder="Search products, makers…" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onQKey }}" style="background:var(--color-surface);border-color:transparent;padding-right:44px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);opacity:.6;pointer-events:none;"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <sc-for list="{{ homeChips }}" as="c" hint-placeholder-count="7"><button onClick="{{ c.pick }}" aria-pressed="{{ c.on }}" style="min-height:46px;padding:0 20px;border-radius:999px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};transition:background-color .2s,color .2s,border-color .2s;">{{ c.name }}</button></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <h2 style="margin:0;font-size:clamp(36px,4vw,60px);line-height:1;letter-spacing:-.03em;">New arrivals</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onClick="{{ arrPrev }}" aria-label="Scroll left" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--color-divider);background:var(--color-bg);color:var(--color-text);cursor:pointer;transition:background-color .2s,color .2s;" style-hover="background:var(--color-text);color:var(--color-bg);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button><button onClick="{{ arrNext }}" aria-label="Scroll right" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--color-divider);background:var(--color-bg);color:var(--color-text);cursor:pointer;transition:background-color .2s,color .2s;" style-hover="background:var(--color-text);color:var(--color-bg);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        <button class="btn btn-secondary" onClick="{{ goShop }}">View all</button>
+      </div>
+    </div>
+    <div ref="{{ arrRef }}" style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,310px);gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:8px 0 12px;scrollbar-width:none;">
+      <sc-for list="{{ arrivals }}" as="c" hint-placeholder-count="5"><div style="scroll-snap-align:start;"><dc-import name="ProductCardV3" p="{{ c }}" hint-size="100%,420px"></dc-import></div></sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:56px;">
+    <div data-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;">
+      <sc-for list="{{ perks }}" as="k" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:var(--box-r,0px);background:var(--color-surface);">
+          <span style="width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:999px;background:var(--color-bg);color:var(--color-accent-700);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="{{ k.icon }}"></path></svg></span>
+          <span style="display:flex;flex-direction:column;"><b style="font-size:15px;font-weight:600;">{{ k.t }}</b><span style="font-size:13px;color:color-mix(in srgb,var(--color-text) 62%,transparent);">{{ k.s }}</span></span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:120px;">
+    <h2 data-reveal="" style="margin:0;font-size:clamp(36px,4vw,60px);line-height:1;letter-spacing:-.03em;text-align:center;margin-bottom:40px;text-wrap:balance;">Offers for every kind of day</h2>
+    <div data-reveal="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));border-radius:var(--box-r,0px);overflow:hidden;background:var(--color-surface);">
+      <div style="position:relative;min-height:560px;overflow:hidden;">
+        <span data-speed="0.14" role="img" aria-label="Sale lookbook" style="position:absolute;left:0;right:0;top:-12%;bottom:-12%;display:block;background:var(--color-surface) url({{ offerImg }}) center/cover no-repeat;"></span>
+      </div>
+      <div style="display:grid;place-items:center;padding:clamp(24px,4vw,56px);background:var(--color-accent-100);">
+        <div style="width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:clamp(24px,3vw,40px);border-radius:var(--box-r,0px);background:var(--color-bg);box-shadow:var(--shadow-md);">
+          <span style="padding:5px 14px;border-radius:999px;border:1px solid var(--color-divider);font-size:13px;font-weight:500;">Offers</span>
+          <h3 style="margin:0;font-size:clamp(30px,3vw,42px);line-height:1.05;letter-spacing:-.02em;">Exclusive offers await</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:color-mix(in srgb,var(--color-text) 65%,transparent);">Up to 40% off ten products from five makers — already marked down, no codes needed.</p>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;"><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.d }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Days</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.h }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Hours</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.m }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Min</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.s }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Sec</span></div></div>
+          <button onClick="{{ goSale }}" style="display:inline-flex;align-items:center;gap:6px;border:0;padding:0;background:none;cursor:pointer;font:inherit;margin-top:4px;">
+            <span style="display:inline-flex;align-items:center;min-height:50px;padding:0 30px;border-radius:999px;background:var(--color-text);color:var(--color-bg);font-size:15px;font-weight:600;">Try now</span>
+            <span style="width:50px;height:50px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--color-text);color:var(--color-text);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"></path></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:120px;">
+    <div data-reveal="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:32px;align-items:center;padding:clamp(20px,3vw,36px);border-radius:var(--box-r,0px);border:1px solid var(--color-divider);">
+      <a href="#" onClick="{{ deal.open }}" style="position:relative;display:block;aspect-ratio:1/1;border-radius:calc(var(--box-r,0px) * .8);overflow:hidden;background:var(--color-surface);">
+        <span role="img" aria-label="{{ deal.name }}" style="position:absolute;inset:0;display:block;background:var(--color-surface) url({{ deal.big }}) center/cover;transition:transform 1.2s cubic-bezier(.2,.7,.2,1);" style-hover="transform:scale(1.05);"></span>
+        <span class="tag tag-accent" style="position:absolute;left:16px;top:16px;">−{{ deal.discount }}% today</span>
+      </a>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);color:var(--color-accent-700);">Deal of the day</span>
+        <h2 style="margin:0;font-size:clamp(34px,3.6vw,54px);line-height:1;letter-spacing:-.03em;">{{ deal.name }}</h2>
+        <span style="font-size:14px;color:color-mix(in srgb,var(--color-text) 65%,transparent);">{{ deal.vendorName }} · ★ {{ deal.rating }} ({{ deal.reviews }} reviews)</span>
+        <p style="margin:0;font-size:16px;line-height:1.55;max-width:480px;color:color-mix(in srgb,var(--color-text) 72%,transparent);">{{ dealDesc }}</p>
+        <div style="display:flex;align-items:baseline;gap:12px;"><span style="font-size:36px;font-weight:700;letter-spacing:-.02em;">{{ deal.price }}</span><span style="font-size:18px;text-decoration:line-through;opacity:.5;">{{ deal.was }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Already sold: <b>30</b></span><span>Available: <b>10</b></span></div>
+          <div style="height:6px;border-radius:6px;background:var(--color-surface);overflow:hidden;"><div style="height:100%;width:75%;border-radius:6px;background:var(--color-accent);"></div></div>
+        </div>
+        <span style="font-size:13px;font-weight:600;margin-top:4px;">Hurry — offer ends in</span>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,72px));gap:8px;"><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.d }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Days</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.h }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Hours</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.m }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Min</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:calc(var(--box-r,0px) * .6);background:var(--color-surface);"><span style="font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;">{{ cd.s }}</span><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.65;">Sec</span></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+          <button class="btn btn-primary" onClick="{{ deal.add }}" style="min-width:200px;justify-content:space-between;"><span>Add to bag</span><span>{{ deal.price }}</span></button>
+          <button class="btn btn-secondary" onClick="{{ deal.open }}">View details</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:120px;">
+    <div data-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:40px 32px;">
+      <sc-for list="{{ lists }}" as="col" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:12px;margin-bottom:6px;border-bottom:1px solid var(--color-divider);"><h3 style="margin:0;font-size:24px;letter-spacing:-.01em;">{{ col.title }}</h3><a href="#" onClick="{{ col.go }}" style="font-size:14px;">See all</a></div>
+          <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="4">
+            <a href="#" onClick="{{ it.open }}" style="display:flex;align-items:center;gap:14px;padding:8px;margin:0 -8px;border-radius:calc(var(--box-r,0px) * .6);color:var(--color-text);text-decoration:none;transition:background-color .2s;" style-hover="background:var(--color-surface);">
+              <span role="img" aria-label="{{ it.name }}" style="width:72px;height:72px;flex:none;display:block;border-radius:calc(var(--box-r,0px) * .5);background:var(--color-surface) url({{ it.img }}) center/cover;"></span>
+              <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                <span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.name }}</span>
+                <span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--color-accent-700);">{{ it.cat }}</span>
+                <span style="font-size:14px;"><b>{{ it.price }}</b> <span style="text-decoration:line-through;opacity:.5;">{{ it.was }}</span></span>
+              </span>
+            </a>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:140px;">
+    <h2 data-reveal="" style="margin:0;font-size:clamp(36px,4vw,60px);line-height:1;letter-spacing:-.03em;text-align:center;max-width:760px;margin:0 auto 48px;text-wrap:balance;font-size:clamp(40px,5vw,76px);">Fresh arrivals and new selections.</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;align-items:start;padding-bottom:60px;">
+      <sc-for list="{{ lookbook }}" as="l" hint-placeholder-count="3">
+        <a href="#" onClick="{{ l.go }}" data-speed="{{ l.speed }}" style="position:relative;display:block;aspect-ratio:3/4;border-radius:var(--box-r,0px);overflow:hidden;background:var(--color-surface);color:#fff;text-decoration:none;margin-top:{{ l.offset }};">
+          <span role="img" aria-label="{{ l.title }}" style="position:absolute;inset:0;display:block;background:var(--color-surface) url({{ l.img }}) center/cover;transition:transform 1.2s cubic-bezier(.2,.7,.2,1);" style-hover="transform:scale(1.05);"></span>
+          <span style="position:absolute;inset:0;display:block;background:linear-gradient(0deg,rgba(12,12,12,.55),rgba(12,12,12,0) 45%);pointer-events:none;"></span>
+          <span style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;"><span style="padding:9px 16px;border-radius:999px;background:var(--color-bg);color:var(--color-text);font-size:13px;font-weight:600;">Shop the kit</span><span style="width:38px;height:38px;display:grid;place-items:center;border-radius:999px;background:var(--color-bg);color:var(--color-text);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></span>
+          <span style="position:absolute;left:20px;right:20px;bottom:18px;display:flex;flex-direction:column;gap:2px;pointer-events:none;"><span style="font-size:26px;font-weight:700;letter-spacing:-.02em;">{{ l.title }}</span><span style="font-size:14px;opacity:.9;">{{ l.desc }} · {{ l.off }}</span></span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <sc-if value="{{ hasRecent }}" hint-placeholder-val="{{ true }}">
+  <section data-reveal="" style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:100px;display:flex;flex-direction:column;gap:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div><div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-bottom:8px;">Pick up where you left off</div><h2 style="margin:0;font-size:clamp(36px,4vw,60px);line-height:1;letter-spacing:-.03em;">Recently viewed</h2></div>
+      <div style="display:flex;gap:8px;"><button onClick="{{ recPrev }}" aria-label="Scroll left" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--color-divider);background:var(--color-bg);color:var(--color-text);cursor:pointer;transition:background-color .2s,color .2s;" style-hover="background:var(--color-text);color:var(--color-bg);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button><button onClick="{{ recNext }}" aria-label="Scroll right" style="width:44px;height:44px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--color-divider);background:var(--color-bg);color:var(--color-text);cursor:pointer;transition:background-color .2s,color .2s;" style-hover="background:var(--color-text);color:var(--color-bg);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg></button></div>
+    </div>
+    <div ref="{{ recRef }}" style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,290px);gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:8px 0 12px;scrollbar-width:none;">
+      <sc-for list="{{ recent }}" as="c" hint-placeholder-count="4"><div style="scroll-snap-align:start;"><dc-import name="ProductCardV3" p="{{ c }}" hint-size="100%,400px"></dc-import></div></sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <section style="max-width:1440px;margin:0 auto;padding-left:24px;padding-right:24px;padding-top:140px;padding-bottom:120px;">
+    <div style="position:relative;border-radius:var(--box-r,0px);background:var(--color-surface);padding:clamp(56px,8vw,120px) 24px;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px;">
+      <sc-for list="{{ floaters }}" as="f" hint-placeholder-count="4">
+        <span data-speed="{{ f.speed }}" role="img" aria-hidden="true" style="position:absolute;left:{{ f.x }};top:{{ f.y }};width:{{ f.w }};aspect-ratio:1/1;display:block;border-radius:calc(var(--box-r,0px) * .7);background:var(--color-bg) url({{ f.src }}) center/cover;box-shadow:var(--shadow-md);transform:rotate({{ f.r }});"></span>
+      </sc-for>
+      <h2 data-reveal="" style="position:relative;margin:0;font-size:clamp(56px,10vw,160px);line-height:.9;letter-spacing:-.05em;">Stay in touch</h2>
+      <p style="position:relative;margin:0;font-size:17px;max-width:420px;color:color-mix(in srgb,var(--color-text) 68%,transparent);">10% off your first order and early access to every drop. One email per drop.</p>
+      <sc-if value="{{ newsOpen }}" hint-placeholder-val="{{ true }}">
+        <form onSubmit="{{ subscribe }}" style="position:relative;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%;max-width:520px;padding:6px;border-radius:999px;background:var(--color-bg);box-shadow:var(--shadow-md);">
+          <input class="input" type="email" placeholder="you@example.com" aria-label="Email" value="{{ newsEmail }}" onChange="{{ onNews }}" style="flex:1 1 220px;border-color:transparent;font-size:16px;">
+          <button type="submit" class="btn btn-primary" style="min-width:140px;">Get 10% off</button>
+        </form>
+      </sc-if>
+      <sc-if value="{{ newsDone }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;display:flex;flex-direction:column;gap:4px;padding:18px 28px;border-radius:var(--box-r,0px);background:var(--color-bg);box-shadow:var(--shadow-md);"><span style="font-size:13px;">Your code — use it at checkout</span><span style="font-size:34px;font-weight:700;letter-spacing:.12em;color:var(--color-accent-700);">VEKTOR10</span></div>
+      </sc-if>
+    </div>
+  </section>
+</main>
+</sc-if>
+<sc-if value="{{ is_shop }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Shop" style="max-width:1400px;margin:0 auto;padding:32px 32px 96px;">
+  <div style="font-size:13px;display:flex;gap:8px;color:color-mix(in srgb,var(--color-text) 60%,transparent);"><a href="#" onClick="{{ goHome }}" style="color:inherit;">Home</a><span>/</span><span>Shop</span><span>/</span><span style="color:var(--color-text);">{{ shopTitle }}</span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:16px 0 24px;padding-bottom:20px;border-bottom:1px solid var(--color-divider);">
+    <h1 style="margin:0;font-size:clamp(40px,5vw,72px);line-height:1;">{{ shopTitle }} <span style="font-size:.4em;opacity:.5;font-family:var(--font-body);">{{ shopCount }}</span></h1>
+    <label style="display:flex;align-items:center;gap:10px;font-size:13px;">Sort by
+      <select class="input" value="{{ sort }}" onChange="{{ onSort }}" style="width:auto;min-height:42px;">
+        <option value="featured">Featured</option><option value="popular">Best selling</option><option value="rated">Top rated</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="discount">Biggest discount</option>
+      </select>
+    </label>
+  </div>
+  <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;">
+    <aside style="flex:1 1 220px;max-width:280px;position:sticky;top:140px;display:flex;flex-direction:column;gap:28px;">
+      <div>
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Category</div>
+        <sc-for list="{{ catOpts }}" as="o" hint-placeholder-count="7">
+          <label class="radio" style="display:flex;justify-content:space-between;width:100%;padding:6px 0;"><span style="display:inline-flex;align-items:center;gap:10px;"><input type="radio" name="vk-cat" checked="{{ o.on }}" onChange="{{ o.pick }}"><span class="dot"></span>{{ o.name }}</span><span style="font-size:12px;opacity:.55;">{{ o.count }}</span></label>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:20px;">
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Price</div>
+        <sc-for list="{{ priceOpts }}" as="o" hint-placeholder-count="5">
+          <label class="radio" style="display:flex;justify-content:space-between;width:100%;padding:6px 0;"><span style="display:inline-flex;align-items:center;gap:10px;"><input type="radio" name="vk-price" checked="{{ o.on }}" onChange="{{ o.pick }}"><span class="dot"></span>{{ o.label }}</span><span style="font-size:12px;opacity:.55;">{{ o.count }}</span></label>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:20px;">
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Maker</div>
+        <sc-for list="{{ vendorOpts }}" as="o" hint-placeholder-count="6">
+          <label style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px;cursor:pointer;"><span style="display:inline-flex;align-items:center;gap:10px;"><input type="checkbox" checked="{{ o.on }}" onChange="{{ o.toggle }}">{{ o.name }}</span><span style="font-size:12px;opacity:.55;">{{ o.count }}</span></label>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:20px;">
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Rating</div>
+        <sc-for list="{{ ratingOpts }}" as="o" hint-placeholder-count="3">
+          <label class="radio" style="display:flex;width:100%;padding:6px 0;"><input type="radio" name="vk-rate" checked="{{ o.on }}" onChange="{{ o.pick }}"><span class="dot"></span>{{ o.label }}</label>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:20px;display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;">Availability</div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" checked="{{ inStock }}" onChange="{{ toggleStock }}">In stock only</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" checked="{{ onSaleF }}" onChange="{{ toggleSaleF }}">On sale</label>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);padding-top:20px;">
+        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:12px;">Colorway</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <sc-for list="{{ colorOpts }}" as="o" hint-placeholder-count="5">
+            <button onClick="{{ o.pick }}" title="{{ o.name }}" aria-label="{{ o.name }}" style="width:28px;height:28px;border-radius:50%;cursor:pointer;background:{{ o.sw }};border:1px solid var(--color-divider);box-shadow:{{ o.ring }};"></button>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+    <div style="flex:999 1 480px;min-width:0;display:flex;flex-direction:column;gap:24px;">
+      <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="2">
+            <button onClick="{{ c.remove }}" style="display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;padding:6px 12px;min-height:34px;cursor:pointer;border:1px solid var(--color-text);background:transparent;color:var(--color-text);border-radius:var(--pill,0px);" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);">{{ c.label }}<span aria-hidden="true">×</span></button>
+          </sc-for>
+          <button class="btn btn-ghost" onClick="{{ clearAll }}">Clear all</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ shopHas }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:40px 20px;">
+          <sc-for list="{{ shopCards }}" as="c" hint-placeholder-count="6"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ shopEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:64px 32px;border:1px dashed var(--color-divider);display:flex;flex-direction:column;gap:12px;align-items:flex-start;border-radius:var(--box-r,0px);">
+          <h3 style="margin:0;font-size:30px;">Nothing matches those filters.</h3>
+          <p style="margin:0;color:color-mix(in srgb,var(--color-text) 62%,transparent);">Try removing a filter or two — or start fresh.</p>
+          <button class="btn btn-primary" onClick="{{ clearAll }}" style="min-height:44px;">Clear filters</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_product }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Product" style="max-width:1400px;margin:0 auto;padding:32px 32px 96px;">
+  <div style="font-size:13px;display:flex;gap:8px;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-bottom:24px;"><a href="#" onClick="{{ goHome }}" style="color:inherit;">Home</a><span>/</span><a href="#" onClick="{{ goPdCat }}" style="color:inherit;">{{ pdCat }}</a><span>/</span><span style="color:var(--color-text);">{{ pdP.name }}</span></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:56px;align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:12px;position:sticky;top:140px;">
+      <div style="position:relative;aspect-ratio:4/5;background:var(--color-surface);border-radius:var(--box-r,0px);overflow:hidden;">
+        <span role="img" aria-label="{{ pdP.name }}" style="display:block;position:absolute;inset:0;width:100%;height:100%;background:var(--color-surface) url({{ pdView }}) center/cover no-repeat;"></span>
+        <sc-if value="{{ pdP.hasDiscount }}" hint-placeholder-val="{{ false }}"><span class="tag tag-accent" style="position:absolute;left:16px;bottom:16px;">−{{ pdP.discount }}%</span></sc-if>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;">
+        <sc-for list="{{ pdThumbs }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.pick }}" aria-label="{{ t.label }}" style="aspect-ratio:1/1;cursor:pointer;padding:0;overflow:hidden;background:var(--color-surface);border:2px solid {{ t.border }};border-radius:var(--box-r,0px);"><span role="img" aria-label="" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ t.src }}) center/cover no-repeat;"></span></button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a href="#" onClick="{{ goPdVendor }}" style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;">{{ pdVendor }} →</a>
+        <h1 style="margin:0;font-size:clamp(40px,4.6vw,68px);line-height:.98;">{{ pdP.name }}</h1>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--color-accent-700);letter-spacing:2px;">★★★★★</span><span>{{ pdP.rating }}</span><a href="#vk-reviews" style="color:inherit;opacity:.65;">{{ pdP.reviews }} reviews</a></div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+        <span style="font-family:var(--font-heading);font-size:40px;font-variant-numeric:tabular-nums;">{{ pdP.price }}</span>
+        <sc-if value="{{ pdHasSave }}" hint-placeholder-val="{{ false }}"><span style="font-size:18px;text-decoration:line-through;opacity:.5;">{{ pdP.was }}</span><span class="tag tag-accent">Save {{ pdSave }}</span></sc-if>
+      </div>
+      <p style="margin:0;font-size:16px;line-height:1.6;max-width:540px;color:color-mix(in srgb,var(--color-text) 75%,transparent);">{{ pdDesc }}</p>
+      <div style="display:flex;flex-direction:column;gap:12px;padding-top:20px;border-top:1px solid var(--color-divider);">
+        <div style="font-size:14px;">Colorway — <b>{{ pdColorName }}</b></div>
+        <div style="display:flex;gap:12px;">
+          <sc-for list="{{ pdColors }}" as="c" hint-placeholder-count="2">
+            <button onClick="{{ c.pick }}" aria-label="{{ c.name }}" title="{{ c.name }}" style="width:40px;height:40px;border-radius:50%;cursor:pointer;background:{{ c.sw }};border:1px solid var(--color-divider);box-shadow:{{ c.ring }};transition:box-shadow .2s;"></button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch;">
+        <div style="display:flex;align-items:center;border:1px solid var(--color-divider);border-radius:var(--pill,0px);">
+          <button onClick="{{ decQty }}" aria-label="Decrease" style="width:48px;height:52px;background:none;border:0;font-size:20px;cursor:pointer;color:var(--color-text);">−</button>
+          <span style="min-width:28px;text-align:center;font-variant-numeric:tabular-nums;font-size:16px;">{{ pdQty }}</span>
+          <button onClick="{{ incQty }}" aria-label="Increase" style="width:48px;height:52px;background:none;border:0;font-size:20px;cursor:pointer;color:var(--color-text);">+</button>
+        </div>
+        <button class="btn btn-primary" onClick="{{ pdAdd }}" style="flex:1 1 200px;min-height:52px;justify-content:space-between;font-size:16px;border-radius:var(--pill,0px);"><span>Add to bag</span><span>{{ pdP.price }}</span></button>
+        <button class="btn btn-secondary" onClick="{{ pdWish }}" style="min-height:52px;min-width:96px;border-radius:var(--pill,0px);">{{ pdWishLabel }}</button>
+      </div>
+      <button class="btn btn-secondary" onClick="{{ pdBuy }}" style="min-height:48px;justify-content:space-between;border-radius:var(--pill,0px);"><span>Buy now — skip the bag</span><span>→</span></button>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));border:1px solid var(--color-divider);border-radius:var(--box-r,0px);">
+        <div style="padding:14px 16px;display:flex;gap:12px;align-items:flex-start;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex:none;margin-top:2px;"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg><span style="font-size:13px;"><b>Arrives {{ pdEta }}</b><br><span style="opacity:.65;">Free over $150</span></span></div>
+        <div style="padding:14px 16px;display:flex;gap:12px;align-items:flex-start;border-left:1px solid var(--color-divider);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex:none;margin-top:2px;"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg><span style="font-size:13px;"><b>30-day returns</b><br><span style="opacity:.65;">{{ pdStock }}</span></span></div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);">
+        <sc-for list="{{ pdAcc }}" as="a" hint-placeholder-count="3">
+          <div style="border-bottom:1px solid var(--color-divider);">
+            <button onClick="{{ a.toggle }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:18px 0;background:none;border:0;font:inherit;font-size:16px;font-weight:500;cursor:pointer;color:var(--color-text);text-align:left;">{{ a.title }}<span style="font-size:20px;">{{ a.sign }}</span></button>
+            <sc-if value="{{ a.open }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 0 20px;font-size:14px;line-height:1.6;color:color-mix(in srgb,var(--color-text) 75%,transparent);">
+                <sc-if value="{{ a.hasBody }}" hint-placeholder-val="{{ true }}"><p style="margin:0;">{{ a.body }}</p></sc-if>
+                <sc-for list="{{ a.rows }}" as="r" hint-placeholder-count="0"><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-divider);"><span>{{ r.k }}</span><span style="color:var(--color-text);">{{ r.v }}</span></div></sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <a href="#" onClick="{{ goPdVendor }}" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px;border:1px solid var(--color-divider);color:var(--color-text);text-decoration:none;border-radius:var(--box-r,0px);" style-hover="border-color:var(--color-accent);">
+        <span style="display:flex;flex-direction:column;"><span style="font-size:12px;opacity:.6;">Sold and shipped by</span><span style="font-family:var(--font-heading);font-size:22px;">{{ pdVendor }}</span><span style="font-size:13px;opacity:.65;">{{ pdVendorLoc }} · ★ {{ pdVendorRating }}</span></span>
+        <span style="font-size:14px;color:var(--color-accent-700);">Visit store →</span>
+      </a>
+    </div>
+  </div>
+  <section id="vk-reviews" data-reveal="" style="margin-top:96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:48px;padding-top:40px;border-top:1px solid var(--color-divider);">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <h2 style="margin:0;font-size:40px;">Reviews</h2>
+      <div style="display:flex;align-items:baseline;gap:10px;"><span style="font-family:var(--font-heading);font-size:64px;line-height:1;">{{ pdP.rating }}</span><span style="opacity:.6;">from {{ pdP.reviews }}</span></div>
+      <sc-for list="{{ pdBars }}" as="b" hint-placeholder-count="5">
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;"><span style="width:14px;">{{ b.n }}</span><span style="flex:1;height:4px;background:var(--color-divider);"><span style="display:block;height:100%;width:{{ b.w }};background:var(--color-accent);"></span></span><span style="width:36px;text-align:right;opacity:.6;">{{ b.pct }}</span></div>
+      </sc-for>
+    </div>
+    <div style="grid-column:span 2;display:flex;flex-direction:column;">
+      <sc-for list="{{ pdReviews }}" as="r" hint-placeholder-count="3">
+        <article style="padding:20px 0;border-bottom:1px solid var(--color-divider);display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--color-accent-700);letter-spacing:2px;">{{ r.stars }}</span><span style="opacity:.6;">{{ r.name }} · {{ r.date }} · Verified</span></div>
+          <h4 style="margin:0;font-size:20px;">{{ r.title }}</h4>
+          <p style="margin:0;font-size:15px;color:color-mix(in srgb,var(--color-text) 75%,transparent);">{{ r.body }}</p>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+  <section data-reveal="" style="margin-top:96px;">
+    <h2 style="margin:0 0 28px;font-size:clamp(32px,3.4vw,48px);">More from {{ pdVendor }}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:36px 20px;">
+      <sc-for list="{{ sameVendor }}" as="c" hint-placeholder-count="4"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+    </div>
+  </section>
+  <section data-reveal="" style="margin-top:96px;">
+    <h2 style="margin:0 0 28px;font-size:clamp(32px,3.4vw,48px);">You may also like</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:36px 20px;">
+      <sc-for list="{{ related }}" as="c" hint-placeholder-count="4"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+    </div>
+  </section>
+</main>
+</sc-if>
+<sc-if value="{{ is_cart }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Cart" style="max-width:1400px;margin:0 auto;padding:40px 32px 96px;">
+  <h1 style="margin:0 0 28px;font-size:clamp(40px,5vw,72px);line-height:1;">Your bag <span style="font-size:.4em;opacity:.5;font-family:var(--font-body);">{{ cartCount }} items</span></h1>
+  <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:64px 32px;border:1px dashed var(--color-divider);display:flex;flex-direction:column;gap:12px;align-items:flex-start;border-radius:var(--box-r,0px);">
+      <h3 style="margin:0;font-size:30px;">Your bag is empty.</h3>
+      <p style="margin:0;opacity:.65;">Saved items and recently viewed products are a click away.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn btn-primary" onClick="{{ goShop }}" style="min-height:44px;">Start shopping</button><button class="btn btn-secondary" onClick="{{ goWish }}" style="min-height:44px;">View saved items</button></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ cartHas }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:48px;align-items:start;">
+    <div style="grid-column:span 2;min-width:0;">
+      <div style="padding:16px 18px;border:1px solid var(--color-divider);margin-bottom:8px;border-radius:var(--box-r,0px);">
+        <div style="font-size:14px;margin-bottom:10px;">{{ freeMsg }}</div>
+        <div style="height:4px;background:var(--color-divider);"><div style="height:100%;width:{{ freePct }};background:var(--color-accent);transition:width .6s cubic-bezier(.2,.7,.2,1);"></div></div>
+      </div>
+      <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="2">
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:20px;padding:24px 0;border-bottom:1px solid var(--color-divider);align-items:start;">
+          <a href="#" onClick="{{ l.open }}" style="aspect-ratio:4/5;display:block;overflow:hidden;background:var(--color-surface);border-radius:var(--box-r,0px);"><span role="img" aria-label="{{ l.name }}" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ l.img }}) center/cover no-repeat;"></span></a>
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+            <span style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;">{{ l.vendor }}</span>
+            <a href="#" onClick="{{ l.open }}" style="font-family:var(--font-heading);font-size:24px;color:var(--color-text);text-decoration:none;line-height:1.1;">{{ l.name }}</a>
+            <span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;"><span style="width:12px;height:12px;border-radius:50%;background:{{ l.sw }};border:1px solid var(--color-divider);"></span>{{ l.color }} · {{ l.unit }} each</span>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:10px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;border:1px solid var(--color-divider);border-radius:var(--pill,0px);">
+                <button onClick="{{ l.dec }}" aria-label="Decrease" style="width:40px;height:40px;background:none;border:0;font-size:18px;cursor:pointer;color:var(--color-text);">−</button>
+                <span style="min-width:24px;text-align:center;font-variant-numeric:tabular-nums;">{{ l.qty }}</span>
+                <button onClick="{{ l.inc }}" aria-label="Increase" style="width:40px;height:40px;background:none;border:0;font-size:18px;cursor:pointer;color:var(--color-text);">+</button>
+              </div>
+              <button class="btn btn-ghost" onClick="{{ l.save }}">Save for later</button>
+              <button class="btn btn-ghost" onClick="{{ l.remove }}" style="color:var(--color-text);">Remove</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            <span style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;">{{ l.line }}</span>
+            <sc-if value="{{ l.hasWas }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;text-decoration:line-through;opacity:.5;">{{ l.was }}</span></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <aside style="position:sticky;top:140px;display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--color-divider);border-radius:var(--box-r,0px);">
+      <h3 style="margin:0;font-size:26px;">Order summary</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:15px;">
+        <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span style="font-variant-numeric:tabular-nums;">{{ sum.sub }}</span></div>
+        <sc-if value="{{ hasDisc }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;color:var(--color-accent-700);"><span>Promo VEKTOR10</span><span>{{ sum.disc }}</span></div></sc-if>
+        <div style="display:flex;justify-content:space-between;"><span>Shipping</span><span>{{ sum.ship }}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Estimated tax</span><span style="font-variant-numeric:tabular-nums;">{{ sum.tax }}</span></div>
+      </div>
+      <form onSubmit="{{ applyPromo }}" style="display:flex;gap:8px;">
+        <input class="input" placeholder="Promo code" value="{{ promo }}" onChange="{{ onPromo }}" style="min-height:42px;">
+        <button type="submit" class="btn btn-secondary" style="min-height:42px;">Apply</button>
+      </form>
+      <sc-if value="{{ hasPromoMsg }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;margin-top:-6px;">{{ promoMsg }}</span></sc-if>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:16px;border-top:1px solid var(--color-divider);"><span style="font-size:16px;font-weight:600;">Total</span><span style="font-family:var(--font-heading);font-size:34px;font-variant-numeric:tabular-nums;">{{ sum.total }}</span></div>
+      <sc-if value="{{ hasSaved }}" hint-placeholder-val="{{ false }}"><span class="tag tag-accent" style="align-self:flex-start;">You’re saving {{ sum.saved }}</span></sc-if>
+      <button class="btn btn-primary" onClick="{{ goCheckout }}" style="min-height:52px;justify-content:space-between;font-size:16px;border-radius:var(--pill,0px);"><span>Checkout</span><span>→</span></button>
+      <span style="display:flex;align-items:center;gap:8px;font-size:12px;opacity:.65;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="11" width="16" height="10"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Secure checkout · Card, wallet, bank or pay in 4</span>
+    </aside>
+  </div>
+  <section data-reveal="" style="margin-top:88px;">
+    <h2 style="margin:0 0 28px;font-size:clamp(28px,3vw,40px);">Add-ons under $100</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:36px 20px;">
+      <sc-for list="{{ cartSuggest }}" as="c" hint-placeholder-count="4"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+    </div>
+  </section>
+  </sc-if>
+</main>
+</sc-if>
+<sc-if value="{{ is_checkout }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Checkout / Payment" style="max-width:1280px;margin:0 auto;padding:40px 32px 96px;">
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:40px;">
+    <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+      <button onClick="{{ st.back }}" style="display:flex;flex-direction:column;gap:10px;background:none;border:0;padding:0;font:inherit;text-align:left;cursor:pointer;color:{{ st.color }};">
+        <span style="height:3px;width:100%;background:{{ st.bar }};transition:background .4s;"></span>
+        <span style="font-size:14px;font-weight:{{ st.weight }};">{{ st.n }} — {{ st.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:48px;align-items:start;">
+    <div style="grid-column:span 2;min-width:0;display:flex;flex-direction:column;gap:28px;">
+      <sc-if value="{{ step1 }}" hint-placeholder-val="{{ true }}">
+        <h2 style="margin:0;font-size:40px;">Where should we ship it?</h2>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+          <sc-for list="{{ shipFields }}" as="fd" hint-placeholder-count="8">
+            <div class="field" style="grid-column:{{ fd.span }};"><label>{{ fd.label }}</label><input class="input" value="{{ fd.value }}" onChange="{{ fd.onChange }}" style="min-height:46px;border-color:{{ fd.border }};"><sc-if value="{{ fd.hasErr }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-accent-700);">{{ fd.err }}</span></sc-if></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;">Delivery</div>
+          <sc-for list="{{ deliveries }}" as="d" hint-placeholder-count="2">
+            <label class="radio" style="display:flex;justify-content:space-between;width:100%;padding:16px 18px;border:1px solid {{ d.border }};border-radius:var(--box-r,0px);transition:border-color .2s;">
+              <span style="display:inline-flex;align-items:center;gap:12px;"><input type="radio" name="vk-del" checked="{{ d.on }}" onChange="{{ d.pick }}"><span class="dot"></span><span style="display:flex;flex-direction:column;"><b style="font-weight:600;">{{ d.label }}</b><span style="font-size:13px;opacity:.65;">{{ d.desc }}</span></span></span>
+              <span style="font-weight:600;">{{ d.price }}</span>
+            </label>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:40px;">How would you like to pay?</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+          <sc-for list="{{ pays }}" as="pm" hint-placeholder-count="4">
+            <label class="radio" style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border:1px solid {{ pm.border }};border-radius:var(--box-r,0px);transition:border-color .2s;">
+              <input type="radio" name="vk-pay" checked="{{ pm.on }}" onChange="{{ pm.pick }}"><span class="dot" style="margin-top:3px;"></span><span style="display:flex;flex-direction:column;"><b style="font-weight:600;">{{ pm.label }}</b><span style="font-size:13px;opacity:.65;">{{ pm.desc }}</span></span>
+            </label>
+          </sc-for>
+        </div>
+        <sc-if value="{{ payCard }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:32px;align-items:center;">
+            <div style="perspective:1200px;">
+              <div style="position:relative;aspect-ratio:1.586/1;transform-style:preserve-3d;transform:{{ cardFlip }};transition:transform .8s cubic-bezier(.2,.7,.2,1);">
+                <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:22px;display:flex;flex-direction:column;justify-content:space-between;background:var(--color-text);color:var(--color-bg);border-radius:var(--radius-lg);background-image:linear-gradient(color-mix(in srgb,var(--color-bg) 10%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--color-bg) 10%,transparent) 1px,transparent 1px);background-size:22px 22px;box-shadow:var(--shadow-lg);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="width:40px;height:30px;border:1px solid color-mix(in srgb,var(--color-bg) 60%,transparent);border-radius:4px;"></span><span style="font-family:var(--font-heading);letter-spacing:.14em;">{{ cardBrand }}</span></div>
+                  <div style="font-family:var(--font-heading);font-size:clamp(18px,2.2vw,26px);letter-spacing:.12em;font-variant-numeric:tabular-nums;">{{ cardNum }}</div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;text-transform:uppercase;letter-spacing:.1em;"><span>{{ cardName }}</span><span>{{ cardExp }}</span></div>
+                </div>
+                <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);background:var(--color-text);color:var(--color-bg);border-radius:var(--radius-lg);display:flex;flex-direction:column;gap:18px;padding:22px 0;box-shadow:var(--shadow-lg);">
+                  <span style="height:42px;background:color-mix(in srgb,var(--color-bg) 25%,var(--color-text));"></span>
+                  <span style="margin:0 22px;display:flex;justify-content:flex-end;align-items:center;height:38px;padding:0 12px;background:var(--color-bg);color:var(--color-text);font-family:var(--font-heading);letter-spacing:.2em;">{{ cardCvc }}</span>
+                  <span style="margin:0 22px;font-size:11px;opacity:.7;">Security code — 3 digits on the back</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;">
+              <div class="field" style="grid-column:span 2;"><label>Card number</label><input class="input" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" value="{{ card.num }}" onChange="{{ onNum }}" style="min-height:46px;font-variant-numeric:tabular-nums;"><span style="font-size:12px;color:var(--color-accent-700);">{{ errNum }}</span></div>
+              <div class="field" style="grid-column:span 2;"><label>Name on card</label><input class="input" autocomplete="cc-name" placeholder="Alex Morgan" value="{{ card.name }}" onChange="{{ onCName }}" style="min-height:46px;"><span style="font-size:12px;color:var(--color-accent-700);">{{ errCName }}</span></div>
+              <div class="field"><label>Expiry</label><input class="input" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" value="{{ card.exp }}" onChange="{{ onExp }}" style="min-height:46px;"><span style="font-size:12px;color:var(--color-accent-700);">{{ errExp }}</span></div>
+              <div class="field"><label>CVC</label><input class="input" inputmode="numeric" autocomplete="cc-csc" placeholder="123" value="{{ card.cvc }}" onChange="{{ onCvc }}" onFocus="{{ flipOn }}" onBlur="{{ flipOff }}" style="min-height:46px;"><span style="font-size:12px;color:var(--color-accent-700);">{{ errCvc }}</span></div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ payOther }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px;border:1px dashed var(--color-divider);font-size:15px;border-radius:var(--box-r,0px);">You’ll confirm <b>{{ payName }}</b> on the next step. Nothing is charged until you place the order.</div>
+        </sc-if>
+      </sc-if>
+      <sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:40px;">Review and place order</h2>
+        <div style="border-top:1px solid var(--color-divider);">
+          <div style="display:flex;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--color-divider);"><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;">Ship to</span><span>{{ shipSummary }}</span><span style="font-size:13px;opacity:.65;">{{ shipEmail }}</span></span><button class="btn btn-ghost" onClick="{{ editShip }}">Edit</button></div>
+          <div style="display:flex;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--color-divider);"><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;">Delivery</span><span>{{ deliverySummary }}</span></span><button class="btn btn-ghost" onClick="{{ editShip }}">Edit</button></div>
+          <div style="display:flex;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--color-divider);"><span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;">Payment</span><span>{{ paySummary }}</span></span><button class="btn btn-ghost" onClick="{{ editPay }}">Edit</button></div>
+        </div>
+      </sc-if>
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:8px;">
+        <button class="btn btn-secondary" onClick="{{ back }}" style="min-height:52px;min-width:140px;border-radius:var(--pill,0px);">← {{ backLabel }}</button>
+        <button class="btn btn-primary" onClick="{{ next }}" disabled="{{ placing }}" style="min-height:52px;min-width:260px;justify-content:space-between;font-size:16px;border-radius:var(--pill,0px);"><span>{{ nextLabel }}</span><span>→</span></button>
+      </div>
+    </div>
+    <aside style="position:sticky;top:140px;display:flex;flex-direction:column;gap:14px;padding:24px;border:1px solid var(--color-divider);border-radius:var(--box-r,0px);">
+      <h3 style="margin:0;font-size:24px;">In your bag · {{ cartCount }}</h3>
+      <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="2">
+        <div style="display:flex;gap:12px;align-items:center;font-size:14px;">
+          <span style="width:52px;height:52px;flex:none;display:block;overflow:hidden;background:var(--color-surface);border-radius:var(--box-r,0px);"><span role="img" aria-label="" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ l.img }}) center/cover no-repeat;"></span></span>
+          <span style="flex:1;display:flex;flex-direction:column;min-width:0;"><span style="font-weight:500;">{{ l.name }}</span><span style="font-size:12px;opacity:.6;">{{ l.color }} × {{ l.qty }}</span></span>
+          <span style="font-variant-numeric:tabular-nums;">{{ l.line }}</span>
+        </div>
+      </sc-for>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;padding-top:14px;border-top:1px solid var(--color-divider);">
+        <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span>{{ sum.sub }}</span></div>
+        <sc-if value="{{ hasDisc }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;color:var(--color-accent-700);"><span>Promo</span><span>{{ sum.disc }}</span></div></sc-if>
+        <div style="display:flex;justify-content:space-between;"><span>Shipping</span><span>{{ sum.ship }}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Tax</span><span>{{ sum.tax }}</span></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:14px;border-top:1px solid var(--color-divider);"><b>Total</b><span style="font-family:var(--font-heading);font-size:30px;">{{ sum.total }}</span></div>
+    </aside>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_success }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Order success" style="max-width:1080px;margin:0 auto;padding:72px 32px 96px;display:flex;flex-direction:column;gap:40px;">
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <span style="width:64px;height:64px;display:grid;place-items:center;border:2px solid var(--color-accent);color:var(--color-accent-700);border-radius:var(--pill,0px);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"></path></svg></span>
+    <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);">Order {{ lo.id }} confirmed</span>
+    <h1 style="margin:0;font-size:clamp(48px,6.4vw,96px);line-height:.92;letter-spacing:-.02em;">Thank you. It’s on its way.</h1>
+    <p style="margin:0;font-size:17px;max-width:560px;color:color-mix(in srgb,var(--color-text) 68%,transparent);">A receipt is heading to {{ lo.email }}. We’ll email tracking as soon as each maker hands it to the courier.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);">
+    <div style="padding:20px 0;"><div style="font-size:12px;opacity:.6;">Estimated arrival</div><div style="font-family:var(--font-heading);font-size:28px;">{{ lo.eta }}</div></div>
+    <div style="padding:20px 0;"><div style="font-size:12px;opacity:.6;">Paid with</div><div style="font-family:var(--font-heading);font-size:28px;">{{ lo.pay }}</div></div>
+    <div style="padding:20px 0;"><div style="font-size:12px;opacity:.6;">Total</div><div style="font-family:var(--font-heading);font-size:28px;">{{ lo.total }}</div></div>
+  </div>
+  <div>
+    <sc-for list="{{ lo.items }}" as="i" hint-placeholder-count="2">
+      <div style="display:flex;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--color-divider);">
+        <span style="width:64px;height:64px;flex:none;display:block;overflow:hidden;background:var(--color-surface);border-radius:var(--box-r,0px);"><span role="img" aria-label="" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ i.img }}) center/cover no-repeat;"></span></span>
+        <span style="flex:1;display:flex;flex-direction:column;"><span style="font-weight:500;">{{ i.name }}</span><span style="font-size:13px;opacity:.6;">{{ i.color }} × {{ i.qty }}</span></span>
+        <span>{{ i.price }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onClick="{{ trackOrder }}" style="min-height:52px;min-width:200px;justify-content:space-between;font-size:16px;border-radius:var(--pill,0px);"><span>Track order</span><span>→</span></button>
+    <button class="btn btn-secondary" onClick="{{ goShop }}" style="min-height:52px;font-size:16px;border-radius:var(--pill,0px);">Continue shopping</button>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_orders }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Orders" style="max-width:1200px;margin:0 auto;padding:40px 32px 96px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:28px;">
+    <h1 style="margin:0;font-size:clamp(40px,5vw,72px);line-height:1;">Orders <span style="font-size:.4em;opacity:.5;font-family:var(--font-body);">{{ orderCount }}</span></h1>
+    <span style="font-size:14px;opacity:.65;">Returns are free within 30 days of delivery.</span>
+  </div>
+  <div style="border-top:1px solid var(--color-divider);">
+    <sc-for list="{{ orderRows }}" as="o" hint-placeholder-count="3">
+      <div style="border-bottom:1px solid var(--color-divider);">
+        <button onClick="{{ o.toggle }}" style="width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr)) 32px;gap:16px;align-items:center;padding:20px 0;background:none;border:0;font:inherit;color:var(--color-text);cursor:pointer;text-align:left;">
+          <span style="display:flex;flex-direction:column;"><span style="font-family:var(--font-heading);font-size:22px;">{{ o.id }}</span><span style="font-size:13px;opacity:.6;">{{ o.date }}</span></span>
+          <span style="font-size:14px;">{{ o.count }} items</span>
+          <span style="font-size:14px;font-variant-numeric:tabular-nums;">{{ o.total }}</span>
+          <span><span class="{{ o.tagClass }}">{{ o.status }}</span></span>
+          <span style="font-size:13px;opacity:.7;">{{ o.etaLabel }} {{ o.eta }}</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="transform:{{ o.chev }};transition:transform .3s;"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ o.open }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:8px 0 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:40px;">
+            <div style="display:flex;flex-direction:column;">
+              <sc-for list="{{ o.timeline }}" as="t" hint-placeholder-count="5">
+                <div style="display:flex;gap:14px;">
+                  <div style="display:flex;flex-direction:column;align-items:center;">
+                    <span style="width:14px;height:14px;flex:none;border:2px solid var(--color-accent);background:{{ t.bg }};border-radius:var(--pill,0px);"></span>
+                    <sc-if value="{{ t.notLast }}" hint-placeholder-val="{{ true }}"><span style="width:2px;flex:1;min-height:26px;background:{{ t.bar }};"></span></sc-if>
+                  </div>
+                  <span style="font-size:14px;line-height:14px;padding-bottom:20px;font-weight:{{ t.weight }};color:{{ t.color }};">{{ t.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <sc-for list="{{ o.items }}" as="i" hint-placeholder-count="2">
+                <div style="display:flex;gap:14px;align-items:center;">
+                  <a href="#" onClick="{{ i.open }}" style="width:56px;height:56px;flex:none;display:block;overflow:hidden;background:var(--color-surface);color:var(--color-text);text-decoration:none;border-radius:var(--box-r,0px);"><span role="img" aria-label="" style="display:block;width:100%;height:100%;background:var(--color-surface) url({{ i.img }}) center/cover no-repeat;"></span></a>
+                  <span style="flex:1;display:flex;flex-direction:column;"><span style="font-weight:500;">{{ i.name }}</span><span style="font-size:12px;opacity:.6;">{{ i.color }} × {{ i.qty }} · {{ i.price }}</span></span>
+                  <button class="btn btn-secondary" onClick="{{ i.again }}" style="min-height:36px;">Buy again</button>
+                </div>
+              </sc-for>
+              <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;"><button class="btn btn-ghost">Start a return</button><button class="btn btn-ghost">Download invoice</button></div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_sale }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Sale">
+  <section style="border-bottom:1px solid var(--color-divider);">
+    <div style="max-width:1400px;margin:0 auto;padding:56px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:32px;align-items:end;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <span class="tag tag-accent" style="align-self:flex-start;">Mid-season sale</span>
+        <h1 style="margin:0;font-size:clamp(56px,8vw,128px);line-height:.88;letter-spacing:-.03em;">Up to 40% off.</h1>
+        <p style="margin:0;font-size:16px;max-width:420px;color:color-mix(in srgb,var(--color-text) 66%,transparent);">{{ saleTotal }} products, prices already marked. Sorted by biggest drop.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+        <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;">Ends in</span>
+        <span style="font-family:var(--font-heading);font-size:clamp(44px,5vw,80px);line-height:1;font-variant-numeric:tabular-nums;">{{ cd.d }}d {{ cd.h }}:{{ cd.m }}:<span style="color:var(--color-accent-700);">{{ cd.s }}</span></span>
+      </div>
+    </div>
+  </section>
+  <div style="max-width:1400px;margin:0 auto;padding:32px 32px 96px;display:flex;flex-direction:column;gap:28px;">
+    <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--pill,0px);overflow:hidden;flex-wrap:wrap;">
+        <sc-for list="{{ saleTiers }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.pick }}" style="font:inherit;font-size:14px;padding:10px 16px;min-height:42px;border:0;cursor:pointer;background:{{ t.bg }};color:{{ t.color }};">{{ t.label }} <span style="opacity:.6;">{{ t.count }}</span></button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <sc-for list="{{ saleCats }}" as="c" hint-placeholder-count="5">
+          <button onClick="{{ c.pick }}" style="background:none;border:0;border-bottom:2px solid {{ c.under }};font:inherit;font-size:14px;padding:6px 0;cursor:pointer;color:{{ c.color }};">{{ c.name }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <span style="font-size:13px;opacity:.6;">{{ saleCount }} deals</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:40px 20px;">
+      <sc-for list="{{ saleCards }}" as="c" hint-placeholder-count="8"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+    </div>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_vendors }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Vendors" style="max-width:1400px;margin:0 auto;padding:40px 32px 96px;">
+  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:36px;">
+    <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);">The makers</span>
+    <h1 style="margin:0;font-size:clamp(44px,6vw,92px);line-height:.92;max-width:900px;">Six independent studios. One checkout.</h1>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));border-top:1px solid var(--color-divider);border-left:1px solid var(--color-divider);">
+    <sc-for list="{{ vendorCards }}" as="v" hint-placeholder-count="6">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:24px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);">
+        <a href="#" onClick="{{ v.go }}" style="position:relative;display:block;aspect-ratio:16/10;overflow:hidden;background:var(--color-surface);border-radius:var(--box-r,0px);"><span role="img" aria-label="{{ v.name }}" style-hover="transform:scale(1.04);" style="display:block;width:100%;height:100%;transition:transform 1s cubic-bezier(.2,.7,.2,1);background:var(--color-surface) url({{ v.cover }}) center/cover no-repeat;"></span></a>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <span style="width:56px;height:56px;display:grid;place-items:center;border:1px solid var(--color-text);font-family:var(--font-heading);font-size:22px;border-radius:var(--pill,0px);">{{ v.initials }}</span>
+          <span style="font-size:12px;opacity:.55;">{{ v.idx }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <a href="#" onClick="{{ v.go }}" style="font-family:var(--font-heading);font-size:30px;line-height:1;color:var(--color-text);text-decoration:none;" style-hover="color:var(--color-accent-700);">{{ v.name }}</a>
+          <span style="font-size:14px;opacity:.65;">{{ v.spec }} · {{ v.loc }}</span>
+        </div>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:color-mix(in srgb,var(--color-text) 75%,transparent);flex:1;">{{ v.about }}</p>
+        <div style="display:flex;gap:16px;font-size:13px;"><span>★ {{ v.rating }}</span><span>{{ v.count }} products</span><span>Since {{ v.since }}</span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onClick="{{ v.go }}" style="flex:1;min-height:42px;justify-content:space-between;border-radius:var(--pill,0px);"><span>Visit store</span><span>→</span></button>
+          <button class="btn btn-secondary" onClick="{{ v.follow }}" style="min-height:42px;min-width:104px;border-radius:var(--pill,0px);">{{ v.followLabel }}</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ is_vendor }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Vendor detail">
+  <section class="{{ edClass }}" style="position:relative;height:56vh;min-height:340px;overflow:hidden;background:var(--color-surface);"><span role="img" aria-label="" data-speed="0.3" style="display:block;position:absolute;left:0;top:-20%;width:100%;height:140%;background:var(--color-surface) url({{ vd.cover }}) center/cover no-repeat;"></span></section>
+  <div style="max-width:1400px;margin:0 auto;padding:0 32px 96px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-top:-44px;position:relative;">
+      <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
+        <span style="width:96px;height:96px;display:grid;place-items:center;background:var(--color-bg);border:1px solid var(--color-text);font-family:var(--font-heading);font-size:36px;border-radius:var(--pill,0px);">{{ vd.initials }}</span>
+      </div>
+    </div>
+    <div style="font-size:13px;display:flex;gap:8px;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin:24px 0 12px;"><a href="#" onClick="{{ goVendors }}" style="color:inherit;">Makers</a><span>/</span><span style="color:var(--color-text);">{{ vd.name }}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:40px;padding-bottom:32px;border-bottom:1px solid var(--color-divider);">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <h1 style="margin:0;font-size:clamp(44px,5.6vw,84px);line-height:.95;">{{ vd.name }}</h1>
+        <span style="font-size:15px;opacity:.7;">{{ vd.spec }} · {{ vd.loc }} · Since {{ vd.since }}</span>
+        <p style="margin:0;font-size:16px;line-height:1.6;max-width:560px;color:color-mix(in srgb,var(--color-text) 75%,transparent);">{{ vd.about }}</p>
+        <div style="display:flex;gap:10px;margin-top:6px;"><button class="{{ vdFollowClass }}" onClick="{{ vdFollow }}" style="min-height:46px;min-width:140px;border-radius:var(--pill,0px);">{{ vdFollowLabel }}</button><button class="btn btn-secondary" style="min-height:46px;border-radius:var(--pill,0px);">Message maker</button></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--color-divider);border-left:1px solid var(--color-divider);align-self:end;">
+        <div style="padding:18px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);"><div style="font-size:12px;opacity:.6;">Rating</div><div style="font-family:var(--font-heading);font-size:34px;">★ {{ vd.rating }}</div></div>
+        <div style="padding:18px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);"><div style="font-size:12px;opacity:.6;">Followers</div><div style="font-family:var(--font-heading);font-size:34px;">{{ vd.followers }}</div></div>
+        <div style="padding:18px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);"><div style="font-size:12px;opacity:.6;">Products</div><div style="font-family:var(--font-heading);font-size:34px;">{{ vd.count }}</div></div>
+        <div style="padding:18px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);"><div style="font-size:12px;opacity:.6;">Ships</div><div style="font-family:var(--font-heading);font-size:34px;">24 h</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin:28px 0;">
+      <sc-for list="{{ vdCats }}" as="c" hint-placeholder-count="3">
+        <button onClick="{{ c.pick }}" style="background:none;border:0;border-bottom:2px solid {{ c.under }};font:inherit;font-size:15px;padding:6px 0;cursor:pointer;color:{{ c.color }};">{{ c.name }}</button>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:40px 20px;">
+      <sc-for list="{{ vdCards }}" as="c" hint-placeholder-count="3"><dc-import name="ProductCardV3" p="{{ c }}" img-class="{{ imgClass }}" motion="{{ motion }}" hint-size="100%,440px"></dc-import></sc-for>
+    </div>
+    <section data-reveal="" style="margin-top:88px;">
+      <h2 style="margin:0 0 20px;font-size:32px;">Other makers</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-top:1px solid var(--color-divider);">
+        <sc-for list="{{ otherVendors }}" as="v" hint-placeholder-count="3">
+          <a href="#" onClick="{{ v.go }}" style="display:flex;justify-content:space-between;gap:12px;padding:18px 0;border-bottom:1px solid var(--color-divider);color:var(--color-text);text-decoration:none;" style-hover="color:var(--color-accent-700);"><span style="display:flex;flex-direction:column;"><span style="font-family:var(--font-heading);font-size:22px;">{{ v.name }}</span><span style="font-size:13px;opacity:.6;">{{ v.spec }} · {{ v.loc }}</span></span><span>→</span></a>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</main>
+</sc-if>
+<footer style="border-top:1px solid var(--color-divider);">
+  <div style="max-width:1400px;margin:0 auto;padding:56px 32px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:40px;">
+    <div style="display:flex;flex-direction:column;gap:12px;grid-column:span 2;">
+      <div style="display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:28px;letter-spacing:.18em;"><span style="width:16px;height:16px;border:2px solid var(--color-accent);transform:rotate(45deg);"></span>VEKTOR</div>
+      <p style="margin:0;font-size:14px;max-width:340px;color:color-mix(in srgb,var(--color-text) 65%,transparent);">Tools and objects from six independent makers, shipped together.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+      <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;">Shop</span>
+      <a href="#" onClick="{{ goShop }}" style="color:inherit;text-decoration:none;">All products</a>
+      <a href="#" onClick="{{ goNew }}" style="color:inherit;text-decoration:none;">New arrivals</a>
+      <a href="#" onClick="{{ goLimited }}" style="color:inherit;text-decoration:none;">Limited editions</a>
+      <a href="#" onClick="{{ goSale }}" style="color:inherit;text-decoration:none;">Sale</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+      <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;">Help</span>
+      <a href="#" onClick="{{ goOrders }}" style="color:inherit;text-decoration:none;">Order status</a>
+      <a href="#" onClick="{{ goOrders }}" style="color:inherit;text-decoration:none;">Returns</a>
+      <a href="#" style="color:inherit;text-decoration:none;">Shipping</a>
+      <a href="#" style="color:inherit;text-decoration:none;">Contact</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+      <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;">Company</span>
+      <a href="#" onClick="{{ goVendors }}" style="color:inherit;text-decoration:none;">Our makers</a>
+      <a href="#" style="color:inherit;text-decoration:none;">Sell on Vektor</a>
+      <a href="#" style="color:inherit;text-decoration:none;">Journal</a>
+      <a href="#" style="color:inherit;text-decoration:none;">Careers</a>
+    </div>
+  </div>
+  <div style="max-width:1400px;margin:0 auto;padding:20px 32px 28px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;border-top:1px solid var(--color-divider);color:color-mix(in srgb,var(--color-text) 60%,transparent);">
+    <span>© 2026 Vektor Supply. All rights reserved.</span>
+    <span>Visa · Mastercard · Amex · Wallet · Bank transfer · Pay in 4</span>
+  </div>
+</footer>
+</sc-if>
+</div>
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:fixed;left:24px;bottom:24px;z-index:80;display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--color-text);color:var(--color-bg);border-radius:var(--box-r,0px);box-shadow:var(--shadow-lg);font-size:14px;max-width:min(420px,calc(100vw - 48px));">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+    <span style="flex:1;">{{ toast }}</span>
+    <button onClick="{{ goCart }}" style="background:none;border:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;">View bag</button>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Industry&quot;,&quot;Nocturne&quot;,&quot;Modernist&quot;,&quot;Organic&quot;,&quot;Classical&quot;,&quot;Broadsheet&quot;],&quot;default&quot;:&quot;Modernist&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Signature&quot;,&quot;Forest&quot;,&quot;Cobalt&quot;,&quot;Theme&quot;],&quot;default&quot;:&quot;Signature&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;corners&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Rounded&quot;,&quot;Theme&quot;],&quot;default&quot;:&quot;Rounded&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startOn&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auth&quot;,&quot;home&quot;,&quot;shop&quot;,&quot;sale&quot;,&quot;vendors&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  static T = {
+    Industry: { dir: 'industry-8d73d954-2ba9-4ed0-a747-9a69caf33582', img: 'duotone', r: '0px', pill: '0px', note: 'Blueprint' },
+    Nocturne: { dir: 'nocturne-321f45f8-6b3e-4ffa-98a0-a67381e96705', img: '', r: 'var(--radius-lg)', pill: 'var(--radius-lg)', note: 'Night' },
+    Modernist: { dir: 'modernist-57bd1623-bd8d-4d6e-b6aa-4b82e259ca98', img: 'grayscale', r: '0px', pill: '0px', note: 'Swiss' },
+    Organic: { dir: 'organic-dc6c863e-5bab-40ac-b136-c44a8024d8d9', img: 'washed', r: 'var(--radius-lg)', pill: '999px', note: 'Soft' },
+    Classical: { dir: 'classical-02463ed9-124f-456b-8303-938fa6ef75ea', img: 'plate', r: 'var(--radius-md)', pill: 'var(--radius-md)', note: 'Editorial' },
+    Broadsheet: { dir: 'broadsheet-7143d22b-815c-4506-939a-6875990574bb', img: 'halftone', r: 'var(--radius-md)', pill: 'var(--radius-md)', note: 'Newsprint' },
+  };
+
+  static PAL = {
+    Signature: { sw: '#E2552D', light: { '--color-bg': '#FAF9F7', '--color-surface': '#F0EDE8', '--color-text': '#161514', '--color-divider': 'color-mix(in srgb, #161514 12%, transparent)', '--color-neutral-100': '#F0EDE8', '--color-neutral-800': '#2E2B28' }, ramp: ['#FDEDE7', '#FAD3C4', '#F4AE95', '#EC825F', '#E2552D', '#C8441F', '#A23518', '#7A2812', '#521B0C'] },
+    Forest: { sw: '#2F7D55', light: { '--color-bg': '#F8F8F5', '--color-surface': '#ECEEE8', '--color-text': '#141714', '--color-divider': 'color-mix(in srgb, #141714 12%, transparent)', '--color-neutral-100': '#ECEEE8', '--color-neutral-800': '#2A2E2A' }, ramp: ['#E8F2EC', '#C9E2D2', '#9DC9AE', '#67A882', '#2F7D55', '#256A47', '#1D5539', '#15402B', '#0D2A1C'] },
+    Cobalt: { sw: '#3A66E6', light: { '--color-bg': '#F8F9FB', '--color-surface': '#ECEFF4', '--color-text': '#12141A', '--color-divider': 'color-mix(in srgb, #12141A 12%, transparent)', '--color-neutral-100': '#ECEFF4', '--color-neutral-800': '#2A2D35' }, ramp: ['#EAF0FE', '#CCDAFC', '#A1BAF8', '#6E93F2', '#3A66E6', '#2D53C7', '#2442A0', '#1A3178', '#112150'] },
+    Theme: { sw: 'var(--color-accent)', light: null, ramp: null },
+  };
+  static SKIN = `
+.btn{font-family:var(--font-body)!important;font-weight:600;font-size:15px;letter-spacing:.01em;min-height:44px;padding:0 22px;border-radius:var(--pill,0px);border:1.5px solid transparent;transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .12s ease;}
+.btn:active{transform:scale(.98)}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
+.btn-primary{background:var(--color-text);color:var(--color-bg);border-color:var(--color-text)}
+.btn-primary:hover{background:var(--color-accent-600);border-color:var(--color-accent-600);color:var(--vk-on-accent)}
+.btn-primary:active{background:var(--color-accent-700);border-color:var(--color-accent-700);color:var(--vk-on-accent)}
+.btn-secondary{background:transparent;color:var(--color-text);border-color:var(--color-text)}
+.btn-secondary:hover{background:var(--color-text);color:var(--color-bg);border-color:var(--color-text)}
+.btn-secondary:active{background:color-mix(in srgb,var(--color-text) 85%,var(--color-bg))}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--color-text);padding:0 4px;min-height:36px;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px}
+.btn-ghost:hover{background:transparent;color:var(--color-accent-700);text-decoration-thickness:2px}
+.btn-icon{padding:0;min-height:0;border-color:transparent;border-radius:999px}
+.btn-icon:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.tag{font-family:var(--font-body);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px;padding:4px 9px;border-radius:var(--pill,0px);border:0}
+.tag-accent{background:var(--color-accent);color:var(--vk-on-accent)}
+.tag-neutral{background:var(--color-bg);color:var(--color-text)}
+.tag-outline{border:1px solid var(--color-text);color:var(--color-text)}
+.input{min-height:46px;border-radius:var(--pill,0px);border:1px solid color-mix(in srgb,var(--color-text) 22%,transparent);background:var(--color-bg)}
+.input:hover{border-color:color-mix(in srgb,var(--color-text) 50%,transparent)}
+.input:focus-visible{border-color:var(--color-text);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-accent) 28%,transparent);outline:none}
+a{color:var(--color-text);text-decoration-thickness:1px;text-underline-offset:3px;transition:color .15s ease}
+a:hover{color:var(--color-accent-700)}
+header nav button{transition:color .15s ease}
+header nav button:hover{color:var(--color-accent-700)!important}
+.radio input:checked + .dot{border-color:var(--color-text);background:var(--color-text)}
+input[type=checkbox]{accent-color:var(--color-text)}
+::selection{background:var(--color-accent-200);color:var(--color-text)}
+.vk-search-btn{display:none!important}
+@media (max-width:1000px){.vk-hide-md{display:none!important}}
+@media (max-width:1100px){.vk-search{display:none!important}.vk-search-btn{display:inline-flex!important}}
+`;
+  static CATS = [{ id: 'audio', name: 'Audio' }, { id: 'wear', name: 'Watches' }, { id: 'shoes', name: 'Footwear' }, { id: 'carry', name: 'Carry' }, { id: 'desk', name: 'Tech' }, { id: 'optics', name: 'Eyewear' }];
+  static V = [
+    { id: 'northfold', name: 'Northfold Audio', loc: 'Oslo, Norway', since: 2016, rating: 4.8, followers: '18.2k', spec: 'Headphones & speakers', about: 'A six-person studio building headphones and speakers tuned by ear, repaired by mail and supported for a decade.' },
+    { id: 'kairo', name: 'Kairo Watch Co.', loc: 'Seoul, South Korea', since: 2019, rating: 4.5, followers: '9.6k', spec: 'Watches & wearables', about: 'Mechanical and smart watches on one shared strap system, serviced for life by the people who assembled them.' },
+    { id: 'stride', name: 'Stride Lab', loc: 'Barcelona, Spain', since: 2017, rating: 4.7, followers: '24.8k', spec: 'Footwear', about: 'Runners and court shoes built on one recyclable sole — resoled in-house when you wear them through.' },
+    { id: 'atlas', name: 'Atlas Carry Co.', loc: 'Portland, USA', since: 2014, rating: 4.9, followers: '31.0k', spec: 'Bags & leather', about: 'Packs cut from recycled sailcloth and leather goods built to be stitched back together, not replaced.' },
+    { id: 'mono', name: 'Studio Mono', loc: 'Berlin, Germany', since: 2018, rating: 4.7, followers: '12.4k', spec: 'Tech & desk', about: 'Keyboards, cameras and lights for the desk — machined, considered and free of subscriptions.' },
+    { id: 'lumen', name: 'Lumen Optics', loc: 'Lyon, France', since: 2011, rating: 4.8, followers: '5.3k', spec: 'Eyewear', about: 'Acetate frames cut and polished in Lyon, with mineral glass lenses and free hinge repairs for life.' },
+  ];
+  static SW = { graphite: ['Graphite', 'var(--color-neutral-800)'], fog: ['Fog', 'var(--color-neutral-300)'], bone: ['Bone', 'var(--color-neutral-100)'], signal: ['Signal', 'var(--color-accent)'], slate: ['Slate', 'var(--color-neutral-600)'] };
+  static RAW = [
+    [1, 'NF-01', 'Monitor One', 'northfold', 'audio', 319, 429, 4.8, 612, 18400, 2210, ['graphite', 'bone'], null, 34, '1505740420928-5e560c06d30e', '1583394838336-acd977736f90'],
+    [2, 'NF-04', 'Pebble Buds', 'northfold', 'audio', 189, null, 4.6, 1204, 22100, 3890, ['bone', 'graphite'], 'New', 120, '1590658268037-6bf12165a8df', '1606220588913-b3aacb4d2f46'],
+    [3, 'NF-09', 'Room Speaker S', 'northfold', 'audio', 449, 649, 4.7, 233, 9100, 640, ['graphite', 'fog'], null, 6, '1608043152269-423dbba4e7e1', '1545454675-3531b543be5d'],
+    [4, 'KL-02', 'Orbit Classic', 'kairo', 'wear', 299, null, 4.5, 870, 25600, 1980, ['bone', 'graphite'], 'New', 58, '1523275335684-37898b6baf30', '1524805444758-089113d48a6d'],
+    [5, 'KL-07', 'Field Chrono', 'kairo', 'wear', 249, 299, 4.4, 402, 14200, 1320, ['graphite', 'slate'], null, 4, '1522312346375-d1a52e2b99b3', '1524592094714-0f0654e20314'],
+    [6, 'KL-11', 'Trace Smartwatch', 'kairo', 'wear', 179, 259, 4.3, 980, 11800, 2600, ['graphite', 'fog'], null, 200, '1546868871-7041f2a55e12', '1579586337278-3befd40fd17a'],
+    [7, 'SL-01', 'Velocity Runner', 'stride', 'shoes', 139, 189, 4.9, 1530, 19800, 4100, ['signal', 'graphite'], 'Limited', 12, '1542291026-7eec264c27ff', '1600185365483-26d7a4cc7519'],
+    [8, 'SL-04', 'Court Low', 'stride', 'shoes', 119, null, 4.8, 640, 12600, 1450, ['bone', 'fog'], null, 41, '1549298916-b41d501d3772', '1491553895911-0055eca6402d'],
+    [9, 'SL-07', 'Trail Mesh', 'stride', 'shoes', 159, 199, 4.6, 2210, 8900, 5200, ['fog', 'signal'], null, 300, '1606107557195-0e29a4b5b4aa', '1595950653106-6c9ebd614d3a'],
+    [10, 'AC-03', 'Daypack 22', 'atlas', 'carry', 219, null, 4.7, 311, 7600, 820, ['graphite', 'slate'], null, 22, '1553062407-98eeb64c6a62', '1581605405669-fcdf81165afa'],
+    [11, 'AC-05', 'Transit Pack', 'atlas', 'carry', 189, 239, 4.8, 1022, 21400, 2330, ['slate', 'graphite'], 'Limited', 9, '1581605405669-fcdf81165afa', '1553062407-98eeb64c6a62'],
+    [12, 'AC-12', 'Card Wallet', 'atlas', 'carry', 59, null, 4.5, 740, 6900, 3100, ['graphite', 'bone'], null, 150, '1627123424574-724758594e93', null],
+    [13, 'SM-06', 'Mono Keyboard 75', 'mono', 'desk', 239, 289, 4.8, 388, 8200, 960, ['fog', 'graphite'], null, 30, '1587829741301-dc798b83add3', '1618384887929-16ec33fab9ef'],
+    [14, 'SM-08', 'Instant Camera', 'mono', 'desk', 129, 189, 4.6, 204, 10400, 610, ['bone', 'graphite'], 'New', 18, '1526170375885-4d8ecf77b99f', '1516035069371-29a1b244cc32'],
+    [15, 'LW-01', 'Aviator 58', 'lumen', 'optics', 189, 229, 4.9, 156, 5400, 290, ['graphite', 'signal'], 'Limited', 5, '1572635196237-14b3f281503f', '1511499767150-a48a237f0083'],
+    [16, 'SM-10', 'Arc Desk Lamp', 'mono', 'desk', 99, null, 4.4, 520, 7100, 1700, ['bone', 'graphite'], null, 80, '1507473885765-e6ed057f782c', '1513506003901-1e6a229e2d15'],
+  ];
+  static P = this.RAW.map(([id, code, name, v, cat, price, was, rating, reviews, views, sold, colors, tag, stock, img, img2]) => ({ id, code, name, v, cat, price, was, rating, reviews, views, sold, colors, tag, stock, img, img2 }));
+  static U = (id, w = 900) => id ? 'https://images.unsplash.com/photo-' + id + '?auto=format&fit=crop&w=' + w + '&q=80' : '';
+  static LIFE = { audio: '1484704849700-f032a568e944', wear: '1524805444758-089113d48a6d', shoes: '1460353581641-37baddab0fa2', carry: '1553062407-98eeb64c6a62', desk: '1517336714731-489689fd1ca8', optics: '1511499767150-a48a237f0083' };
+  static VCOVER = { northfold: '1484704849700-f032a568e944', kairo: '1524805444758-089113d48a6d', stride: '1460353581641-37baddab0fa2', atlas: '1441986300917-64674bd600d8', mono: '1517336714731-489689fd1ca8', lumen: '1509631179647-0177331693ae' };
+  static DESC = {
+    audio: 'Tuned flat and built to be repaired. Pads, cable and battery are user-replaceable, with a ten-year parts promise from the maker.',
+    wear: 'Sapphire glass, a shared quick-release strap system and lifetime servicing from the people who assembled it.',
+    shoes: 'One recyclable sole, a knit upper that breathes, and an in-house resoling service when you wear them through.',
+    carry: 'Recycled sailcloth, sealed zips and a lifetime stitch-repair program. Fits under any airline seat.',
+    desk: 'Machined aluminium, considered materials and no subscriptions. Designed in Berlin to last a decade on the desk.',
+    optics: 'Hand-polished acetate, mineral glass with UV400 protection and free hinge repairs for life.',
+  };
+  static SPECS = {
+    audio: [['Driver', '40 mm beryllium'], ['Battery', '60 h'], ['Weight', '268 g'], ['Connection', 'BT 5.4 · USB-C · 3.5 mm']],
+    wear: [['Case', '40 mm steel'], ['Glass', 'Sapphire'], ['Water', '10 ATM'], ['Strap', 'Quick-release 20 mm']],
+    shoes: [['Upper', 'Recycled knit'], ['Sole', 'Recyclable EVA'], ['Drop', '8 mm'], ['Weight', '265 g']],
+    carry: [['Volume', '6–22 L'], ['Fabric', 'Recycled sailcloth'], ['Zips', 'Sealed, YKK'], ['Warranty', 'Lifetime repair']],
+    desk: [['Material', 'Aluminium'], ['Connection', 'USB-C'], ['Finish', 'Bead-blasted'], ['Warranty', '5 years']],
+    optics: [['Frame', 'Acetate'], ['Lens', 'Mineral glass, UV400'], ['Size', '58-14-140'], ['Warranty', 'Lifetime hinge']],
+  };
+  static REVIEWS = [
+    { name: 'Mira K.', rating: 5, date: 'Sep 21, 2026', title: 'Exactly as described', body: 'Arrived in two days, packaging was minimal and recyclable. Build quality is a step above anything I had before.' },
+    { name: 'Daniel R.', rating: 4, date: 'Sep 12, 2026', title: 'Great, one small note', body: 'Love it. The color is slightly darker than the photos, which I actually prefer.' },
+    { name: 'Sana O.', rating: 5, date: 'Aug 30, 2026', title: 'Second one I have bought', body: 'Bought one for my partner after a month with mine. Support answered a question within the hour.' },
+  ];
+
+  constructor(props) {
+    super(props);
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem('vk-proto-v2') || '{}'); } catch (e) {}
+    this.mainRef = React.createRef();
+    this.stageRef = React.createRef();
+    this.state = {
+      theme: props.theme || 'Modernist', palette: props.palette || 'Signature', corners: props.corners || 'Rounded', heroIdx: 0, homeChip: 'all', route: s.route || props.startOn || 'auth', pid: s.pid || 1, vid: s.vid || 'northfold',
+      cart: s.cart || [{ key: '7-graphite', id: 7, color: 'graphite', qty: 1 }, { key: '2-signal', id: 2, color: 'signal', qty: 2 }],
+      wish: s.wish || [4, 11], recent: s.recent || [3, 7, 1, 11, 14], follow: s.follow || ['atlas'],
+      orders: s.orders || [
+        { id: 'VK-25390', date: 'Sep 28, 2026', items: [{ id: 11, color: 'fog', qty: 1 }, { id: 12, color: 'slate', qty: 1 }], total: 323.28, status: 'Processing', eta: 'Oct 4, 2026' },
+        { id: 'VK-25102', date: 'Sep 19, 2026', items: [{ id: 1, color: 'graphite', qty: 1 }], total: 344.52, status: 'Shipped', eta: 'Oct 3, 2026' },
+        { id: 'VK-24811', date: 'Aug 30, 2026', items: [{ id: 9, color: 'graphite', qty: 2 }, { id: 6, color: 'signal', qty: 1 }], total: 158.76, status: 'Delivered', eta: 'Sep 4, 2026' },
+      ],
+      lastOrder: s.lastOrder || null,
+      authMode: 'login', login: { email: '', pw: '' }, reg: { name: '', email: '', pw: '' }, showPw: false, authErr: '',
+      menu: null, q: '', f: { cat: null, price: null, vendors: [], rating: 0, inStock: false, onSale: false, color: null, tag: null, wished: false }, sort: 'featured',
+      tab: 'viewed', pdColor: null, pdQty: 1, pdImg: 0, pdOpen: 'details',
+      promo: '', promoApplied: false, promoMsg: '',
+      step: 1, ship: { first: 'Alex', last: 'Morgan', email: 'alex.morgan@mail.com', phone: '+1 503 555 0142', address: '1420 NW Lovejoy St, Apt 6', city: 'Portland', zip: '97209', country: 'United States' },
+      errs: {}, delivery: 'standard', pay: 'card', card: { num: '', exp: '', cvc: '', name: '' }, flip: false, placing: false,
+      openOrder: 'VK-25102', saleTier: 'all', saleCat: 'all', vdCat: 'all',
+      toast: null, now: Date.now(), saleEnd: Date.now() + ((2 * 24 + 14) * 3600 + 22 * 60) * 1000,
+    };
+  }
+
+  componentDidMount() {
+    this._prev = { ...this.state };
+    this.applyTheme();
+    this.onScroll = () => { if (this.raf) return; this.raf = requestAnimationFrame(() => { this.raf = null; this.parallax(); }); };
+    window.addEventListener('scroll', this.onScroll, { passive: true }); window.addEventListener('resize', this.onScroll);
+    this.onImgErr = (e) => { const t = e.target; if (t && t.tagName === 'IMG') t.style.visibility = 'hidden'; };
+    document.addEventListener('error', this.onImgErr, true);
+    this.arrRef = React.createRef(); this.recRef = React.createRef();
+    this.heroT = setInterval(() => { if (this.state.route === 'home' && this.props.motion !== false && !this.heroHover && !document.hidden) this.setState(s => ({ heroIdx: (s.heroIdx + 1) % 3 })); }, 7000);
+    this.tick = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    setTimeout(() => { this.setupReveal(); this.parallax(); this.animateHero(); }, 60);
+  }
+  parallax() {
+    if (this.props.motion === false) return;
+    const vh = window.innerHeight;
+    document.querySelectorAll('[data-speed],[data-px]').forEach(el => {
+      const isX = el.dataset.px != null;
+      const host = isX ? el : (el.parentElement || el);
+      const r = host.getBoundingClientRect();
+      if (r.bottom < -300 || r.top > vh + 300) return;
+      const d = (r.top + r.height / 2) - vh / 2;
+      if (isX) el.style.translate = (d * parseFloat(el.dataset.px)).toFixed(1) + 'px 0';
+      else el.style.translate = '0 ' + (-d * parseFloat(el.dataset.speed || 0)).toFixed(1) + 'px';
+    });
+  }
+  componentWillUnmount() { window.removeEventListener('scroll', this.onScroll); window.removeEventListener('resize', this.onScroll); document.removeEventListener('error', this.onImgErr, true); clearInterval(this.tick); clearInterval(this.heroT); clearTimeout(this.toastT); this.io && this.io.disconnect(); }
+  componentDidUpdate(pp, prevState) {
+    pp = pp || {};
+    const ps = prevState || this._prev || {};
+    this._prev = { ...this.state };
+    if (pp.theme !== this.props.theme && this.props.theme) this.setState({ theme: this.props.theme });
+    if (pp.palette !== this.props.palette && this.props.palette) this.setState({ palette: this.props.palette });
+    if (pp.corners !== this.props.corners && this.props.corners) this.setState({ corners: this.props.corners });
+    if (ps.theme !== this.state.theme || ps.palette !== this.state.palette || ps.corners !== this.state.corners) this.applyTheme();
+    if (ps.heroIdx !== undefined && ps.heroIdx !== this.state.heroIdx) setTimeout(() => this.animateHero(), 20);
+    const s = this.state;
+    if (ps.route !== s.route || ps.pid !== s.pid || ps.vid !== s.vid) {
+      window.scrollTo(0, 0);
+      if (this.props.motion !== false && this.mainRef.current) this.mainRef.current.animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      setTimeout(() => { this.setupReveal(); this.parallax(); this.animateHero(); }, 60);
+    }
+    try { localStorage.setItem('vk-proto-v2', JSON.stringify({ route: s.route === 'success' ? 'orders' : s.route, pid: s.pid, vid: s.vid, cart: s.cart, wish: s.wish, recent: s.recent, follow: s.follow, orders: s.orders, lastOrder: s.lastOrder })); } catch (e) {}
+  }
+  applyTheme() {
+    const t = Component.T[this.state.theme] || Component.T.Industry;
+    const href = `_ds/${t.dir}/styles.css`;
+    let link = document.getElementById('vk-theme');
+    if (!link) { link = document.createElement('link'); link.rel = 'stylesheet'; link.id = 'vk-theme'; document.head.appendChild(link); }
+    if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(l => { if (l !== link && /_ds\/.+\/styles\.css/.test(l.getAttribute('href') || '')) l.disabled = true; });
+    const r = document.documentElement.style;
+    const round = this.state.corners !== 'Theme';
+    r.setProperty('--box-r', round ? '22px' : t.r); r.setProperty('--pill', round ? '999px' : t.pill);
+    let skin = document.getElementById('vk-skin');
+    if (!skin) { skin = document.createElement('style'); skin.id = 'vk-skin'; skin.textContent = Component.SKIN; }
+    document.head.appendChild(skin);
+    const keys = ['--color-bg', '--color-surface', '--color-text', '--color-divider', '--color-neutral-100', '--color-neutral-800', '--color-accent', '--color-accent-2', ...[100, 200, 300, 400, 500, 600, 700, 800, 900].map(n => '--color-accent-' + n)];
+    keys.forEach(k => r.removeProperty(k));
+    const dark = this.state.theme === 'Nocturne';
+    r.setProperty('--vk-on-accent', dark ? 'var(--color-bg)' : '#ffffff');
+    const P = Component.PAL[this.state.palette];
+    if (P && P.ramp) {
+      [100, 200, 300, 400, 500, 600, 700, 800, 900].forEach((n, i) => r.setProperty('--color-accent-' + n, dark ? P.ramp[8 - i] : P.ramp[i]));
+      r.setProperty('--color-accent', P.ramp[dark ? 3 : 4]); r.setProperty('--color-accent-2', P.ramp[dark ? 3 : 4]);
+      if (dark) { r.setProperty('--color-accent-600', P.ramp[2]); r.setProperty('--color-accent-700', P.ramp[2]); }
+      if (!dark) Object.entries(P.light).forEach(([k, v]) => r.setProperty(k, v));
+    }
+  }
+  setupReveal() {
+    if (this.props.motion === false || !('IntersectionObserver' in window)) return;
+    this.io && this.io.disconnect();
+    const run = (el) => {
+      const kids = el.hasAttribute('data-stagger') ? Array.from(el.children).filter(k => k.nodeType === 1) : [el];
+      kids.forEach((k, i) => k.animate([{ opacity: 0, transform: 'translateY(40px)' }, { opacity: 1, transform: 'none' }], { duration: 850, delay: i * 90, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }));
+    };
+    this.io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { run(en.target); this.io.unobserve(en.target); } }), { threshold: 0.1 });
+    document.querySelectorAll('[data-reveal],[data-stagger]').forEach(el => { if (el.getBoundingClientRect().top > window.innerHeight * 0.92) this.io.observe(el); });
+  }
+  animateHero() {
+    if (this.props.motion === false || this.state.route !== 'home') return;
+    const E = 'cubic-bezier(.2,.8,.2,1)';
+    document.querySelectorAll('[data-word]').forEach((el, i) => el.animate([{ transform: 'translateY(110%) rotate(4deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 950, delay: 60 + i * 75, easing: E, fill: 'backwards' }));
+    document.querySelectorAll('[data-hero-img]').forEach(el => el.animate([{ transform: 'scale(1.16)', opacity: 0.35 }, { transform: 'scale(1)', opacity: 1 }], { duration: 1800, easing: 'cubic-bezier(.2,.7,.2,1)' }));
+    document.querySelectorAll('[data-hero-fade]').forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: 750, delay: 420 + i * 90, easing: E, fill: 'backwards' }));
+  }
+  
+  fmt(n) { return '$' + (Math.round(n * 100) % 100 ? n.toFixed(2) : Math.round(n).toLocaleString('en-US')); }
+  prod(id) { return Component.P.find(p => p.id === id); }
+  vend(id) { return Component.V.find(v => v.id === id); }
+  catName(id) { return (Component.CATS.find(c => c.id === id) || {}).name || 'All'; }
+  disc(p) { return p.was ? Math.round((1 - p.price / p.was) * 100) : 0; }
+  pd(fn) { return (e) => { if (e && e.preventDefault) e.preventDefault(); fn(e); }; }
+  go(route, extra = {}) { this.setState({ route, menu: null, ...extra }); }
+  showToast(msg) { clearTimeout(this.toastT); this.setState({ toast: msg }); this.toastT = setTimeout(() => this.setState({ toast: null }), 2800); }
+  openProduct(id) { this.go('product', { pid: id, pdColor: null, pdQty: 1, pdImg: 0, recent: [id, ...this.state.recent.filter(x => x !== id)].slice(0, 8) }); }
+  addToCart(id, color, qty = 1) {
+    const p = this.prod(id); color = color || p.colors[0];
+    const key = id + '-' + color;
+    this.setState(s => {
+      const ex = s.cart.find(l => l.key === key);
+      return { cart: ex ? s.cart.map(l => l.key === key ? { ...l, qty: l.qty + qty } : l) : [...s.cart, { key, id, color, qty }] };
+    });
+    this.showToast(`${p.name} — ${Component.SW[color][0]} added to your bag`);
+  }
+  toggleWish(id) { this.setState(s => ({ wish: s.wish.includes(id) ? s.wish.filter(x => x !== id) : [...s.wish, id] })); }
+  setF(patch) { this.setState(s => ({ f: { ...s.f, ...patch } })); }
+  shopWith(patch, extra = {}) { this.go('shop', { f: { cat: null, price: null, vendors: [], rating: 0, inStock: false, onSale: false, color: null, tag: null, wished: false, ...patch }, q: '', ...extra }); }
+  openMenu(m) {
+    const was = this.state.menu;
+    this.setState({ menu: m }, () => {
+      const el = document.getElementById('vk-mega');
+      if (el && !was && this.props.motion !== false) el.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    });
+  }
+  card(p) {
+    const d = this.disc(p);
+    return {
+      id: p.id, code: p.code, img: Component.U(p.img, 800), img2: Component.U(p.img2, 800), name: p.name, vendorName: this.vend(p.v).name, price: this.fmt(p.price), was: p.was ? this.fmt(p.was) : '',
+      hasDiscount: d > 0, discount: d, hasTag: !!p.tag, tag: p.tag, rating: p.rating.toFixed(1), reviews: p.reviews.toLocaleString('en-US'),
+      colors: p.colors.map(c => ({ name: Component.SW[c][0], sw: Component.SW[c][1] })), low: p.stock <= 12, stock: p.stock,
+      wished: this.state.wish.includes(p.id), shape: (p.cat === 'audio' || p.cat === 'wear' || p.cat === 'optics') ? '50%' : '0',
+      open: this.pd(() => this.openProduct(p.id)), add: () => this.addToCart(p.id), wish: this.pd(() => this.toggleWish(p.id)),
+    };
+  }
+  priceIn(p, b) { return !b || (b === 'u100' ? p.price < 100 : b === '100' ? p.price >= 100 && p.price < 250 : b === '250' ? p.price >= 250 && p.price < 500 : p.price >= 500); }
+  sortList(L, sort) {
+    const by = { 'price-asc': (a, b) => a.price - b.price, 'price-desc': (a, b) => b.price - a.price, rated: (a, b) => b.rating - a.rating, popular: (a, b) => b.sold - a.sold, discount: (a, b) => this.disc(b) - this.disc(a) }[sort];
+    return by ? [...L].sort(by) : L;
+  }
+  totals(cart, delivery) {
+    const sub = cart.reduce((a, l) => a + this.prod(l.id).price * l.qty, 0);
+    const saved = cart.reduce((a, l) => { const p = this.prod(l.id); return a + (p.was ? (p.was - p.price) * l.qty : 0); }, 0);
+    const disc = this.state.promoApplied ? sub * 0.1 : 0;
+    const net = sub - disc;
+    const ship = cart.length === 0 ? 0 : (net >= 150 ? 0 : 12) + (delivery === 'express' ? 18 : 0);
+    const tax = net * 0.08;
+    return { sub, saved, disc, ship, tax, total: net + ship + tax };
+  }
+  mk3D(s) {
+    const h = React.createElement, half = s / 2, motion = this.props.motion !== false;
+    const labels = ['NF-01', 'KL-02', 'AC-03', 'SM-06', 'FU-05', 'LW-01'];
+    const face = (tr, i) => h('div', { key: i, style: { position: 'absolute', inset: 0, border: '1px solid var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 7%, transparent)', transform: tr + ` translateZ(${half}px)`, display: 'flex', alignItems: 'flex-end', padding: 10, fontFamily: 'var(--font-heading)', fontSize: 11, letterSpacing: '0.14em', color: 'var(--color-accent)', backgroundImage: 'linear-gradient(color-mix(in srgb, var(--color-accent) 22%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 22%, transparent) 1px, transparent 1px)', backgroundSize: `${s / 6}px ${s / 6}px` } }, labels[i]);
+    const faces = ['rotateY(0deg)', 'rotateY(90deg)', 'rotateY(180deg)', 'rotateY(-90deg)', 'rotateX(90deg)', 'rotateX(-90deg)'].map(face);
+    const ic = s * 0.42;
+    const innerFaces = ['rotateY(0deg)', 'rotateY(90deg)', 'rotateY(180deg)', 'rotateY(-90deg)', 'rotateX(90deg)', 'rotateX(-90deg)'].map((tr, i) => h('div', { key: i, style: { position: 'absolute', inset: 0, background: 'color-mix(in srgb, var(--color-accent) 30%, transparent)', border: '1px solid var(--color-accent)', transform: tr + ` translateZ(${ic / 2}px)` } }));
+    const inner = h('div', { key: 'in', style: { position: 'absolute', left: '50%', top: '50%', width: ic, height: ic, marginLeft: -ic / 2, marginTop: -ic / 2, transformStyle: 'preserve-3d', animation: motion ? 'vk-spin-r 9s linear infinite' : 'none' } }, innerFaces);
+    const cube = h('div', { key: 'cube', style: { position: 'absolute', left: '50%', top: '50%', width: s, height: s, marginLeft: -half, marginTop: -half, transformStyle: 'preserve-3d', animation: motion ? 'vk-spin 22s linear infinite' : 'none', transform: 'rotateX(-22deg) rotateY(35deg)' } }, [...faces, inner]);
+    const ring = (k, d, anim, dash) => h('div', { key: k, style: { position: 'absolute', left: '50%', top: '50%', width: d, height: d, marginLeft: -d / 2, marginTop: -d / 2, borderRadius: '50%', border: `1px ${dash} color-mix(in srgb, var(--color-text) 40%, transparent)`, transformStyle: 'preserve-3d', animation: motion ? anim : 'none', transform: 'rotateX(74deg)' } },
+      h('div', { style: { position: 'absolute', top: -5, left: '50%', marginLeft: -5, width: 10, height: 10, background: 'var(--color-accent)' } }));
+    const floor = h('div', { key: 'floor', style: { position: 'absolute', left: '50%', top: '50%', width: s * 3.4, height: s * 3.4, marginLeft: -s * 1.7, marginTop: -s * 1.7, transform: `rotateX(90deg) translateZ(${-s * 1.05}px)`, backgroundImage: 'linear-gradient(var(--color-divider) 1px, transparent 1px), linear-gradient(90deg, var(--color-divider) 1px, transparent 1px)', backgroundSize: `${s / 5}px ${s / 5}px`, WebkitMaskImage: 'radial-gradient(circle, #000 20%, transparent 68%)', maskImage: 'radial-gradient(circle, #000 20%, transparent 68%)' } });
+    const floatWrap = h('div', { style: { position: 'absolute', inset: 0, transformStyle: 'preserve-3d', animation: motion ? 'vk-float 6s ease-in-out infinite' : 'none' } }, [cube, ring('r1', s * 1.9, 'vk-ring 26s linear infinite', 'dashed'), ring('r2', s * 2.5, 'vk-ring2 40s linear infinite', 'solid')]);
+    const stage = h('div', { ref: this.stageRef, style: { position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transition: 'transform .8s cubic-bezier(.2,.7,.2,1)' } }, [floor, floatWrap]);
+    return h('div', { style: { position: 'absolute', inset: 0, perspective: '1100px', pointerEvents: 'none' } }, stage);
+  }
+  marquee() {
+    const h = React.createElement;
+    const items = ['Mid-season sale — up to 40% off', 'Free shipping over $150', 'Drop 26 is live', '30-day returns on everything', '6 independent makers', 'Members get early access'];
+    const row = (k) => h('div', { key: k, style: { display: 'flex', gap: 48, paddingRight: 48, flexShrink: 0 } }, items.map((t, i) => h('span', { key: i, style: { display: 'inline-flex', alignItems: 'center', gap: 48, whiteSpace: 'nowrap' } }, t, h('span', { style: { width: 6, height: 6, background: 'var(--color-accent)', display: 'inline-block', transform: 'rotate(45deg)' } }))));
+    return h('div', { style: { display: 'flex', width: 'max-content', animation: this.props.motion !== false ? 'vk-marquee 38s linear infinite' : 'none' } }, [row('a'), row('b')]);
+  }
+
+  renderVals() {
+    const C = Component, s = this.state, T = C.T[s.theme] || C.T.Industry;
+    const go = (r, x) => this.pd(() => this.go(r, x));
+    const cards = (L) => L.map(p => this.card(p));
+    const muted = 'color-mix(in srgb, var(--color-text) 60%, transparent)';
+    const rem = Math.max(0, s.saleEnd - s.now);
+    const pad = (n) => String(n).padStart(2, '0');
+    const cd = { d: pad(Math.floor(rem / 864e5)), h: pad(Math.floor(rem / 36e5) % 24), m: pad(Math.floor(rem / 6e4) % 60), s: pad(Math.floor(rem / 1e3) % 60) };
+    const cartCount = s.cart.reduce((a, l) => a + l.qty, 0);
+    const heroMove = (e) => {
+      const el = this.stageRef.current; if (!el || this.props.motion === false) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.translate = (-x * 28).toFixed(1) + 'px ' + (-y * 28).toFixed(1) + 'px';
+    };
+    const heroLeave = () => { if (this.stageRef.current) this.stageRef.current.style.translate = '0 0'; };
+
+    // auth
+    const reg = s.authMode === 'register';
+    const pwScore = Math.min(4, [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(s.reg.pw)).length);
+    const authSubmit = this.pd(() => {
+      const ok = reg ? (s.reg.name && /\S+@\S+\.\S+/.test(s.reg.email) && s.reg.pw.length >= 8) : (/\S+@\S+\.\S+/.test(s.login.email) && s.login.pw.length >= 4);
+      if (!ok) return this.setState({ authErr: reg ? 'Add your name, a valid email and a password of 8+ characters.' : 'Enter a valid email and your password.' });
+      this.setState({ authErr: '' }); this.go('home'); this.showToast(reg ? `Welcome to Vektor, ${s.reg.name.split(' ')[0]}` : 'Signed in — welcome back');
+    });
+
+    // shop
+    const f = s.f, q = s.q.trim().toLowerCase();
+    let shopL = C.P.filter(p => (!f.cat || p.cat === f.cat) && (!f.vendors.length || f.vendors.includes(p.v)) && this.priceIn(p, f.price) && p.rating >= f.rating && (!f.inStock || p.stock > 0) && (!f.onSale || p.was) && (!f.color || p.colors.includes(f.color)) && (!f.tag || p.tag === f.tag) && (!f.wished || s.wish.includes(p.id)) && (!q || (p.name + ' ' + this.vend(p.v).name + ' ' + this.catName(p.cat)).toLowerCase().includes(q)));
+    shopL = this.sortList(shopL, s.sort);
+    const priceLabels = { u100: 'Under $100', '100': '$100 – $250', '250': '$250 – $500', o500: '$500+' };
+    const chips = [];
+    if (f.cat) chips.push({ label: this.catName(f.cat), remove: () => this.setF({ cat: null }) });
+    if (f.price) chips.push({ label: priceLabels[f.price], remove: () => this.setF({ price: null }) });
+    f.vendors.forEach(v => chips.push({ label: this.vend(v).name, remove: () => this.setF({ vendors: f.vendors.filter(x => x !== v) }) }));
+    if (f.rating) chips.push({ label: f.rating.toFixed(1) + '★ & up', remove: () => this.setF({ rating: 0 }) });
+    if (f.inStock) chips.push({ label: 'In stock', remove: () => this.setF({ inStock: false }) });
+    if (f.onSale) chips.push({ label: 'On sale', remove: () => this.setF({ onSale: false }) });
+    if (f.color) chips.push({ label: C.SW[f.color][0], remove: () => this.setF({ color: null }) });
+    if (f.tag) chips.push({ label: f.tag, remove: () => this.setF({ tag: null }) });
+    if (f.wished) chips.push({ label: 'Saved items', remove: () => this.setF({ wished: false }) });
+    if (s.q) chips.push({ label: `“${s.q}”`, remove: () => this.setState({ q: '' }) });
+
+    // product
+    const P = this.prod(s.pid), PV = this.vend(P.v), pColor = s.pdColor || P.colors[0];
+    const eta = new Date(s.now + 3 * 864e5).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const views = ['Front', 'Alternate', 'Lifestyle', 'Maker'];
+    const pdSrcs = [C.U(P.img, 1200), C.U(P.img2 || P.img, 1200), C.U(C.LIFE[P.cat], 1200), C.U(C.VCOVER[P.v], 1200)];
+
+    // cart / checkout
+    const tt = this.totals(s.cart, s.delivery);
+    const cartSub = tt.sub - tt.disc;
+    const setShip = (k) => (e) => { const v = e.target.value; this.setState(st => ({ ship: { ...st.ship, [k]: v }, errs: { ...st.errs, [k]: null } })); };
+    const shipDefs = [['first', 'First name', 1], ['last', 'Last name', 1], ['email', 'Email', 2], ['phone', 'Phone', 2], ['address', 'Street address', 2], ['city', 'City', 1], ['zip', 'ZIP / Postcode', 1], ['country', 'Country', 2]];
+    const cardSet = (k) => (e) => {
+      let v = e.target.value;
+      if (k === 'num') v = v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+      if (k === 'exp') { v = v.replace(/\D/g, '').slice(0, 4); if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2); }
+      if (k === 'cvc') v = v.replace(/\D/g, '').slice(0, 4);
+      this.setState(st => ({ card: { ...st.card, [k]: v }, errs: { ...st.errs, [k]: null } }));
+    };
+    const digits = s.card.num.replace(/\s/g, '');
+    const numDisp = (digits + '•'.repeat(16 - digits.length)).replace(/(.{4})/g, '$1 ').trim();
+    const next = this.pd(() => {
+      if (s.step === 1) {
+        const errs = {}; shipDefs.forEach(([k]) => { if (!String(s.ship[k]).trim()) errs[k] = 'Required'; });
+        if (s.ship.email && !/\S+@\S+\.\S+/.test(s.ship.email)) errs.email = 'Enter a valid email';
+        if (Object.keys(errs).length) return this.setState({ errs });
+        return this.setState({ step: 2, errs: {} });
+      }
+      if (s.step === 2) {
+        if (s.pay === 'card') {
+          const errs = {};
+          if (digits.length < 16) errs.num = 'Enter all 16 digits';
+          if (!/^(0[1-9]|1[0-2])\/\d\d$/.test(s.card.exp)) errs.exp = 'MM/YY';
+          if (s.card.cvc.length < 3) errs.cvc = '3–4 digits';
+          if (!s.card.name.trim()) errs.cname = 'Required';
+          if (Object.keys(errs).length) return this.setState({ errs });
+        }
+        return this.setState({ step: 3, errs: {} });
+      }
+      this.setState({ placing: true });
+      setTimeout(() => {
+        const st = this.state, t2 = this.totals(st.cart, st.delivery);
+        const o = { id: 'VK-' + (25400 + Math.floor(Math.random() * 500)), date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), items: st.cart.map(l => ({ id: l.id, color: l.color, qty: l.qty })), total: t2.total, status: 'Processing', eta: new Date(Date.now() + (st.delivery === 'express' ? 2 : 5) * 864e5).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), pay: st.pay, email: st.ship.email };
+        this.setState({ placing: false, orders: [o, ...st.orders], lastOrder: o, cart: [], promoApplied: false, promo: '', step: 1, openOrder: o.id });
+        this.go('success');
+      }, 1500);
+    });
+    const payNames = { card: 'Card', wallet: 'Express wallet', bank: 'Bank transfer', later: 'Pay in 4' };
+
+    // orders
+    const STEPS = ['Placed', 'Packed', 'Shipped', 'Out for delivery', 'Delivered'];
+    const stIdx = { Processing: 1, Shipped: 2, Delivered: 4 };
+    const orderRow = (o) => {
+      const idx = stIdx[o.status] ?? 0, open = s.openOrder === o.id;
+      return {
+        id: o.id, date: o.date, total: this.fmt(o.total), status: o.status, eta: o.eta, count: o.items.reduce((a, i) => a + i.qty, 0),
+        tagClass: o.status === 'Delivered' ? 'tag tag-neutral' : o.status === 'Shipped' ? 'tag tag-accent' : 'tag tag-outline',
+        open, chev: open ? 'rotate(180deg)' : 'none', toggle: () => this.setState({ openOrder: open ? null : o.id }),
+        etaLabel: o.status === 'Delivered' ? 'Delivered' : 'Arriving',
+        items: o.items.map(i => { const p = this.prod(i.id); return { img: C.U(p.img, 300), name: p.name, code: p.code, color: C.SW[i.color][0], qty: i.qty, price: this.fmt(p.price * i.qty), open: this.pd(() => this.openProduct(p.id)), again: () => this.addToCart(p.id, i.color, i.qty) }; }),
+        timeline: STEPS.map((l, i) => ({ label: l, bg: i <= idx ? 'var(--color-accent)' : 'var(--color-bg)', bar: i < idx ? 'var(--color-accent)' : 'var(--color-divider)', weight: i === idx ? 600 : 400, color: i <= idx ? 'var(--color-text)' : muted, last: i === STEPS.length - 1, notLast: i < STEPS.length - 1 })),
+      };
+    };
+
+    // sale
+    const saleAll = C.P.filter(p => p.was);
+    const tierOk = (p, t) => { const d = this.disc(p); return t === 'all' || (t === 'u20' ? d < 20 : t === '20' ? d >= 20 && d < 30 : d >= 30); };
+    const saleL = this.sortList(saleAll.filter(p => tierOk(p, s.saleTier) && (s.saleCat === 'all' || p.cat === s.saleCat)), 'discount');
+    const tiers = [['all', 'All deals'], ['u20', 'Up to 20%'], ['20', '20 – 30%'], ['30', '30% +']];
+
+    // vendor
+    const VD = this.vend(s.vid), vdAll = C.P.filter(p => p.v === VD.id);
+    const vdCats = [...new Set(vdAll.map(p => p.cat))];
+
+    const routes = ['auth', 'home', 'shop', 'product', 'cart', 'checkout', 'success', 'orders', 'sale', 'vendors', 'vendor'];
+    const is = {}; routes.forEach(r => { is['is_' + r] = s.route === r; });
+    const navActive = (r) => (s.route === r || (r === 'shop' && s.route === 'product') || (r === 'vendors' && s.route === 'vendor')) ? 'var(--color-accent)' : 'var(--color-text)';
+    const lo = s.lastOrder;
+
+    return {
+      ...is, notAuth: s.route !== 'auth',
+      ...(() => {
+        const HS = [
+          { img: '1515886657613-9f3515b0c78f', alt: 'Model wearing Drop 26', kicker: 'Drop 26 — live now', w: ['Gear', 'up', 'for', 'every'], out: 'season.', sub: 'Headphones, watches, runners and carry from six independent makers. One bag, one checkout.', cta: 'Start shopping', go: () => this.shopWith({}) },
+          { img: '1483985988355-763728e1935b', alt: 'Mid-season sale', kicker: 'Mid-season sale', w: ['Up', 'to', '40%', 'off.', 'No'], out: 'codes.', sub: 'Ten products from five makers, already marked down until the timer runs out.', cta: 'Shop the sale', go: () => this.go('sale') },
+          { img: '1469334031218-e382a71b716b', alt: 'Limited editions', kicker: 'Limited editions', w: ['Made', 'to', 'be'], out: 'kept.', sub: 'Numbered runs, built to last and repaired for life by the people who made them.', cta: 'See editions', go: () => this.shopWith({ tag: 'Limited' }) },
+        ];
+        const cur = HS[s.heroIdx] || HS[0];
+        const chipF = (id) => this.setState({ homeChip: id }, () => { const el = this.arrRef.current; if (!el || this.props.motion === false) return; el.scrollLeft = 0; Array.from(el.children).forEach((k, i) => k.animate([{ opacity: 0, transform: 'translateY(24px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: i * 60, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })); });
+        const sc = (ref, d) => () => { const el = ref.current; if (el) el.scrollBy({ left: d * el.clientWidth * 0.8, behavior: 'smooth' }); };
+        const mini = (p) => ({ img: C.U(p.img, 240), name: p.name, cat: this.catName(p.cat), price: this.fmt(p.price), was: p.was ? this.fmt(p.was) : '', open: this.pd(() => this.openProduct(p.id)) });
+        const D = this.prod(3);
+        return {
+          hs: { ...cur, img: C.U(cur.img, 2000), words: [...cur.w.map(t => ({ t, color: '#ffffff', stroke: '0' })), { t: cur.out, color: 'transparent', stroke: '2px #ffffff' }], go: this.pd(cur.go) },
+          heroNum: '0' + (s.heroIdx + 1), heroPrev: () => this.setState({ heroIdx: (s.heroIdx + 2) % 3 }), heroNext: () => this.setState({ heroIdx: (s.heroIdx + 1) % 3 }),
+          heroDots: HS.map((x, i) => ({ label: 'Slide ' + (i + 1), w: i === s.heroIdx ? '36px' : '10px', bg: i === s.heroIdx ? '#ffffff' : 'rgba(255,255,255,.45)', pick: () => this.setState({ heroIdx: i }) })),
+          heroPause: () => { this.heroHover = true; }, heroResume: () => { this.heroHover = false; },
+          avatars: ['1494790108377-be9c29b29330', '1507003211169-0a1dd7228f2d', '1438761681033-6461ffad8d80'].map(id => ({ src: C.U(id, 120) })),
+          filmImg: C.U('1460353581641-37baddab0fa2', 600), offerImg: C.U('1490481651871-ab68de25d43d', 1400),
+          homeChip: s.homeChip, onHomeCat: (e) => chipF(e.target.value),
+          homeChips: [{ id: 'all', name: 'All' }, ...C.CATS].map(c => ({ name: c.name, on: s.homeChip === c.id, bg: s.homeChip === c.id ? 'var(--color-text)' : 'transparent', color: s.homeChip === c.id ? 'var(--color-bg)' : 'var(--color-text)', border: s.homeChip === c.id ? 'var(--color-text)' : 'var(--color-divider)', pick: () => chipF(c.id) })),
+          arrivals: [...C.P].filter(p => s.homeChip === 'all' || p.cat === s.homeChip).sort((a, b) => b.id - a.id).map(p => this.card(p)),
+          arrRef: this.arrRef, recRef: this.recRef, arrPrev: sc(this.arrRef, -1), arrNext: sc(this.arrRef, 1), recPrev: sc(this.recRef, -1), recNext: sc(this.recRef, 1),
+          perks: [
+            { t: 'Free delivery', s: 'On orders over $150', icon: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
+            { t: '30-day returns', s: 'Free, no questions asked', icon: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5' },
+            { t: 'Secure payment', s: 'Card, wallet or pay in 4', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4' },
+            { t: 'Repairs for life', s: 'Straight from the maker', icon: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z' },
+          ],
+          deal: { ...this.card(D), big: C.U(D.img, 1200) }, dealDesc: C.DESC[D.cat],
+          lists: [
+            { title: 'New arrivals', go: this.pd(() => this.shopWith({ tag: 'New' })), items: [...C.P].sort((a, b) => b.id - a.id).slice(0, 4).map(mini) },
+            { title: 'Trending', go: this.pd(() => this.shopWith({}, { sort: 'popular' })), items: [...C.P].sort((a, b) => b.views - a.views).slice(0, 4).map(mini) },
+            { title: 'Top rated', go: this.pd(() => this.shopWith({}, { sort: 'rated' })), items: [...C.P].sort((a, b) => b.rating - a.rating).slice(0, 4).map(mini) },
+          ],
+          floaters: [['1434389677669-e08b4cac3105', '4%', '12%', '150px', '-6deg', '-0.12'], ['1505740420928-5e560c06d30e', '82%', '8%', '130px', '5deg', '0.1'], ['1572635196237-14b3f281503f', '10%', '64%', '120px', '4deg', '0.18'], ['1542291026-7eec264c27ff', '78%', '60%', '160px', '-4deg', '-0.08']].map(([id, x, y, w, r, sp]) => ({ src: C.U(id, 400), x, y, w, r, speed: sp })),
+        };
+      })(), edClass: s.palette === 'Theme' ? T.img : '', palettes: Object.keys(C.PAL).map(k => ({ name: k, sw: C.PAL[k].sw, ring: k === s.palette ? '0 0 0 2px var(--color-bg), 0 0 0 3.5px var(--color-text)' : 'none', pick: () => this.setState({ palette: k }) })), hero: { main: C.U('1515886657613-9f3515b0c78f', 1400), sale: C.U('1483985988355-763728e1935b', 2200), auth: C.U('1469334031218-e382a71b716b', 1600), menu: C.U('1490481651871-ab68de25d43d', 800) },
+      limitedList: C.P.filter(p => p.tag === 'Limited').map((p, i) => ({ ...this.card(p), big: C.U(p.img, 1200), idx: pad(i + 1), ed: [300, 500, 150][i] || 200 })), mainRef: this.mainRef, imgClass: T.img, themeName: s.theme,
+      themes: Object.keys(C.T).map(k => ({ name: k, note: C.T[k].note, active: k === s.theme, bg: k === s.theme ? 'var(--color-text)' : 'transparent', color: k === s.theme ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ theme: k }) })),
+      hasToast: !!s.toast, toast: s.toast,
+      goHome: go('home'), goShop: this.pd(() => this.shopWith({})), goSale: go('sale'), goVendors: go('vendors'), goOrders: go('orders'), goCart: go('cart'), goAuth: go('auth', { authMode: 'login' }), goCheckout: go('checkout', { step: 1 }), goWish: this.pd(() => this.shopWith({ wished: true })),
+      goLimited: this.pd(() => this.shopWith({ tag: 'Limited' })), goNew: this.pd(() => this.shopWith({ tag: 'New' })),
+      // header
+      navShop: navActive('shop'), navSale: navActive('sale'), navVendors: navActive('vendors'), navOrders: navActive('orders'),
+      menuShop: s.menu === 'shop', menuSale: s.menu === 'sale', menuVendors: s.menu === 'vendors', menuOpen: !!s.menu,
+      openShop: () => this.openMenu('shop'), openSale: () => this.openMenu('sale'), openVendors: () => this.openMenu('vendors'), closeMenu: () => this.setState({ menu: null }),
+      megaCats: C.CATS.map((c, i) => ({ name: c.name, idx: pad(i + 1), count: C.P.filter(p => p.cat === c.id).length, go: this.pd(() => this.shopWith({ cat: c.id })) })),
+      megaVendors: C.V.map(v => ({ name: v.name, spec: v.spec, go: go('vendor', { vid: v.id, vdCat: 'all' }) })),
+      megaColl: [['New arrivals', { tag: 'New' }], ['Limited editions', { tag: 'Limited' }], ['Under $100', { price: 'u100' }], ['Top rated', { rating: 4.7 }], ['Saved items', { wished: true }]].map(([n, p]) => ({ name: n, go: this.pd(() => this.shopWith(p)) })),
+      megaTiers: tiers.slice(1).map(([id, l]) => ({ label: l, count: saleAll.filter(p => tierOk(p, id)).length, go: go('sale', { saleTier: id, saleCat: 'all' }) })),
+      megaSaleTop: cards(this.sortList(saleAll, 'discount').slice(0, 3)).map(c => ({ ...c, pct: c.discount })),
+      cartCount, hasCart: cartCount > 0, wishCount: s.wish.length, hasWish: s.wish.length > 0,
+      q: s.q, onQ: (e) => this.setState({ q: e.target.value }), onQKey: (e) => { if (e.key === 'Enter') this.go('shop'); },
+      cd, saleOver: rem === 0,
+      // auth
+      artX: reg ? '100%' : '0%', formX: reg ? '-100%' : '0%', trackY: reg ? '-50%' : '0%', isLogin: !reg, isReg: reg,
+      toReg: this.pd(() => this.setState({ authMode: 'register', authErr: '' })), toLogin: this.pd(() => this.setState({ authMode: 'login', authErr: '' })),
+      login: s.login, reg: s.reg, pwType: s.showPw ? 'text' : 'password', pwToggle: s.showPw ? 'Hide' : 'Show', togglePw: () => this.setState({ showPw: !s.showPw }),
+      onLEmail: (e) => this.setState({ login: { ...s.login, email: e.target.value } }), onLPw: (e) => this.setState({ login: { ...s.login, pw: e.target.value } }),
+      onRName: (e) => this.setState({ reg: { ...s.reg, name: e.target.value } }), onREmail: (e) => this.setState({ reg: { ...s.reg, email: e.target.value } }), onRPw: (e) => this.setState({ reg: { ...s.reg, pw: e.target.value } }),
+      pwBars: [0, 1, 2, 3].map(i => ({ bg: i < pwScore ? 'var(--color-accent)' : 'var(--color-divider)' })), pwLabel: ['Too short', 'Weak', 'Okay', 'Strong', 'Very strong'][pwScore],
+      authErr: s.authErr, hasAuthErr: !!s.authErr, authSubmit, guest: go('home'),
+      stageRef: this.stageRef, onHeroMove: heroMove, onHeroLeave: heroLeave, marquee: this.marquee(),
+      // home
+      heroPick: this.card(this.prod(1)),
+      homeCats: C.CATS.map((c, i) => ({ name: c.name, idx: pad(i + 1), count: C.P.filter(p => p.cat === c.id).length, img: C.U(C.LIFE[c.id], 900), go: this.pd(() => this.shopWith({ cat: c.id })) })),
+      recent: cards(s.recent.map(id => this.prod(id)).slice(0, 4)), hasRecent: s.recent.length > 0,
+      sale4: cards(this.sortList(saleAll, 'discount').slice(0, 4)),
+      tabs: [['viewed', 'Most viewed'], ['sold', 'Best selling'], ['rated', 'Top rated']].map(([id, l]) => ({ label: l, active: s.tab === id, bg: s.tab === id ? 'var(--color-text)' : 'transparent', color: s.tab === id ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ tab: id }) })),
+      tabCards: cards([...C.P].sort(s.tab === 'viewed' ? (a, b) => b.views - a.views : s.tab === 'sold' ? (a, b) => b.sold - a.sold : (a, b) => b.rating - a.rating).slice(0, 4)),
+      tabMetric: C.P.slice().sort((a, b) => b.views - a.views)[0].name,
+      limitedHero: this.card(this.prod(15)), limitedSide: cards([this.prod(7), this.prod(11)]),
+      lookbook: [['Commute kit', 'Pack, buds and runners', 'Up to 26% off', '1434389677669-e08b4cac3105'], ['Desk reset', 'Keyboard, camera and lamp', 'Up to 32% off', '1496181133206-80ce9b88a853'], ['Sound at home', 'Speaker and headphones', 'Up to 31% off', '1545454675-3531b543be5d'], ['Weekend walk', 'Trail mesh and aviators', 'Up to 20% off', '1509631179647-0177331693ae']].map(([t, d, o, img], i) => ({ title: t, desc: d, off: o, img: C.U(img, 900), speed: [-0.05, 0.12, -0.08, 0.05][i], offset: ['0px', '80px', '24px', '96px'][i], go: go('sale', { saleTier: 'all', saleCat: 'all' }) })),
+      newsEmail: s.newsEmail || '', onNews: (e) => this.setState({ newsEmail: e.target.value }), newsDone: !!s.newsDone, newsOpen: !s.newsDone,
+      subscribe: this.pd(() => { if (/\S+@\S+\.\S+/.test(s.newsEmail || '')) this.setState({ newsDone: true }); else this.showToast('Enter a valid email to get your code'); }),
+      // shop
+      shopTitle: f.wished ? 'Saved items' : f.tag ? (f.tag === 'New' ? 'New arrivals' : 'Limited editions') : f.cat ? this.catName(f.cat) : s.q ? `Results for “${s.q}”` : 'All products',
+      shopCount: shopL.length, shopCards: cards(shopL), shopEmpty: shopL.length === 0, shopHas: shopL.length > 0,
+      catOpts: [{ id: null, name: 'All products', count: C.P.length }, ...C.CATS.map(c => ({ id: c.id, name: c.name, count: C.P.filter(p => p.cat === c.id).length }))].map(o => ({ ...o, on: f.cat === o.id, pick: () => this.setF({ cat: o.id }) })),
+      priceOpts: [[null, 'Any price'], ['u100', 'Under $100'], ['100', '$100 – $250'], ['250', '$250 – $500'], ['o500', '$500+']].map(([id, l]) => ({ label: l, on: f.price === id, count: id ? C.P.filter(p => this.priceIn(p, id)).length : C.P.length, pick: () => this.setF({ price: id }) })),
+      vendorOpts: C.V.map(v => ({ name: v.name, on: f.vendors.includes(v.id), count: C.P.filter(p => p.v === v.id).length, toggle: () => this.setF({ vendors: f.vendors.includes(v.id) ? f.vendors.filter(x => x !== v.id) : [...f.vendors, v.id] }) })),
+      ratingOpts: [[0, 'Any rating'], [4.5, '4.5 & up'], [4.7, '4.7 & up']].map(([r, l]) => ({ label: l, on: f.rating === r, pick: () => this.setF({ rating: r }) })),
+      inStock: f.inStock, onSaleF: f.onSale, toggleStock: () => this.setF({ inStock: !f.inStock }), toggleSaleF: () => this.setF({ onSale: !f.onSale }),
+      colorOpts: Object.keys(C.SW).map(k => ({ name: C.SW[k][0], sw: C.SW[k][1], ring: f.color === k ? '0 0 0 2px var(--color-bg), 0 0 0 3px var(--color-text)' : 'none', pick: () => this.setF({ color: f.color === k ? null : k }) })),
+      chips: chips.map(c => ({ ...c, remove: this.pd(c.remove) })), hasChips: chips.length > 0, clearAll: this.pd(() => this.shopWith({})),
+      sort: s.sort, onSort: (e) => this.setState({ sort: e.target.value }),
+      // product
+      pdP: this.card(P), pdCat: this.catName(P.cat), pdVendor: PV.name, pdVendorLoc: PV.loc, pdVendorRating: PV.rating, goPdVendor: go('vendor', { vid: PV.id, vdCat: 'all' }), goPdCat: this.pd(() => this.shopWith({ cat: P.cat })),
+      pdSave: P.was ? this.fmt(P.was - P.price) : '', pdHasSave: !!P.was, pdDesc: C.DESC[P.cat], pdEta: eta, pdColorName: C.SW[pColor][0],
+      pdStock: P.stock <= 12 ? `Low stock — ${P.stock} left` : 'In stock, ready to ship', pdLow: P.stock <= 12,
+      pdColors: P.colors.map(c => ({ name: C.SW[c][0], sw: C.SW[c][1], ring: c === pColor ? '0 0 0 2px var(--color-bg), 0 0 0 3px var(--color-text)' : 'none', pick: () => this.setState({ pdColor: c }) })),
+      pdQty: s.pdQty, incQty: () => this.setState({ pdQty: Math.min(P.stock, s.pdQty + 1) }), decQty: () => this.setState({ pdQty: Math.max(1, s.pdQty - 1) }),
+      pdAdd: () => this.addToCart(P.id, pColor, s.pdQty), pdBuy: () => { this.addToCart(P.id, pColor, s.pdQty); this.go('checkout', { step: 1 }); },
+      pdWished: s.wish.includes(P.id), pdWishLabel: s.wish.includes(P.id) ? 'Saved' : 'Save', pdWish: () => this.toggleWish(P.id),
+      pdView: pdSrcs[s.pdImg] || pdSrcs[0], pdThumbs: views.map((l, i) => ({ label: l, src: pdSrcs[i], border: i === s.pdImg ? 'var(--color-text)' : 'transparent', pick: () => this.setState({ pdImg: i }) })),
+      pdAcc: [['details', 'Details', C.DESC[P.cat] + ' Every order ships carbon-neutral in plastic-free packaging.', []], ['specs', 'Specifications', '', C.SPECS[P.cat].map(([k, v]) => ({ k, v }))], ['ship', 'Shipping & returns', `Free standard shipping over $150, otherwise $12. Express (1–2 days) +$18. Returns are free within 30 days — start one from your orders page.`, []]].map(([id, t, body, rows]) => ({ title: t, body, rows, hasBody: !!body, open: s.pdOpen === id, sign: s.pdOpen === id ? '−' : '+', toggle: () => this.setState({ pdOpen: s.pdOpen === id ? null : id }) })),
+      pdReviews: C.REVIEWS.map(r => ({ ...r, stars: '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) })),
+      pdBars: [5, 4, 3, 2, 1].map((n, i) => ({ n, w: [72, 19, 6, 2, 1][i] + '%', pct: [72, 19, 6, 2, 1][i] + '%' })),
+      sameVendor: cards(vdAll.filter(p => p.id !== P.id).concat(C.P.filter(p => p.v !== P.v && p.cat === P.cat)).slice(0, 4)),
+      related: cards(C.P.filter(p => p.id !== P.id && p.v !== P.v).sort((a, b) => b.views - a.views).slice(0, 4)),
+      // cart
+      cartLines: s.cart.map(l => { const p = this.prod(l.id); return { key: l.key, img: C.U(p.img, 300), name: p.name, code: p.code, vendor: this.vend(p.v).name, color: C.SW[l.color][0], sw: C.SW[l.color][1], qty: l.qty, unit: this.fmt(p.price), line: this.fmt(p.price * l.qty), hasWas: !!p.was, was: p.was ? this.fmt(p.was * l.qty) : '', open: this.pd(() => this.openProduct(p.id)),
+        inc: () => this.setState(st => ({ cart: st.cart.map(x => x.key === l.key ? { ...x, qty: x.qty + 1 } : x) })), dec: () => this.setState(st => ({ cart: st.cart.map(x => x.key === l.key ? { ...x, qty: Math.max(1, x.qty - 1) } : x) })),
+        remove: () => this.setState(st => ({ cart: st.cart.filter(x => x.key !== l.key) })), save: () => { this.setState(st => ({ cart: st.cart.filter(x => x.key !== l.key), wish: st.wish.includes(p.id) ? st.wish : [...st.wish, p.id] })); this.showToast(`${p.name} moved to saved items`); } }; }),
+      cartEmpty: s.cart.length === 0, cartHas: s.cart.length > 0,
+      sum: { sub: this.fmt(tt.sub), disc: '−' + this.fmt(tt.disc), ship: tt.ship ? this.fmt(tt.ship) : 'Free', tax: this.fmt(tt.tax), total: this.fmt(tt.total), saved: this.fmt(tt.saved + tt.disc) },
+      hasDisc: tt.disc > 0, hasSaved: tt.saved + tt.disc > 0,
+      freePct: Math.min(100, cartSub / 150 * 100) + '%', freeMsg: cartSub >= 150 ? 'You’ve unlocked free shipping.' : `Add ${this.fmt(150 - cartSub)} more for free shipping.`,
+      promo: s.promo, onPromo: (e) => this.setState({ promo: e.target.value, promoMsg: '' }), promoMsg: s.promoMsg, hasPromoMsg: !!s.promoMsg,
+      applyPromo: this.pd(() => s.promo.trim().toUpperCase() === 'VEKTOR10' ? this.setState({ promoApplied: true, promoMsg: 'VEKTOR10 applied — 10% off.' }) : this.setState({ promoApplied: false, promoMsg: 'That code isn’t valid. Try VEKTOR10.' })),
+      cartSuggest: cards(C.P.filter(p => !s.cart.some(l => l.id === p.id) && p.price < 100).slice(0, 4)),
+      // checkout
+      steps: ['Shipping', 'Payment', 'Review'].map((l, i) => ({ n: pad(i + 1), label: l, color: i + 1 <= s.step ? 'var(--color-text)' : muted, bar: i + 1 <= s.step ? 'var(--color-accent)' : 'var(--color-divider)', weight: i + 1 === s.step ? 600 : 400, back: () => { if (i + 1 < s.step) this.setState({ step: i + 1 }); } })),
+      step1: s.step === 1, step2: s.step === 2, step3: s.step === 3, notStep1: s.step > 1,
+      back: this.pd(() => s.step > 1 ? this.setState({ step: s.step - 1, errs: {} }) : this.go('cart')), backLabel: s.step > 1 ? 'Back' : 'Back to bag',
+      nextLabel: s.step === 1 ? 'Continue to payment' : s.step === 2 ? 'Review order' : (s.placing ? 'Processing payment…' : `Place order · ${this.fmt(tt.total)}`), next, placing: s.placing,
+      shipFields: shipDefs.map(([k, l, sp]) => ({ key: k, label: l, value: s.ship[k], onChange: setShip(k), span: `span ${sp}`, err: s.errs[k], hasErr: !!s.errs[k], border: s.errs[k] ? 'var(--color-accent)' : 'var(--color-divider)' })),
+      deliveries: [['standard', 'Standard', '4–6 business days', cartSub >= 150 ? 'Free' : '$12'], ['express', 'Express', '1–2 business days', cartSub >= 150 ? '+$18' : '$30']].map(([id, l, d, pr]) => ({ id, label: l, desc: d, price: pr, on: s.delivery === id, border: s.delivery === id ? 'var(--color-text)' : 'var(--color-divider)', pick: () => this.setState({ delivery: id }) })),
+      pays: [['card', 'Credit or debit card', 'Visa, Mastercard, Amex'], ['wallet', 'Express wallet', 'Pay with a saved device wallet'], ['bank', 'Bank transfer', 'Ships once payment clears (1–2 days)'], ['later', 'Pay in 4', `4 interest-free payments of ${this.fmt(tt.total / 4)}`]].map(([id, l, d]) => ({ id, label: l, desc: d, on: s.pay === id, border: s.pay === id ? 'var(--color-text)' : 'var(--color-divider)', pick: () => this.setState({ pay: id, errs: {} }) })),
+      payCard: s.pay === 'card', payOther: s.pay !== 'card', payName: payNames[s.pay],
+      card: s.card, onNum: cardSet('num'), onExp: cardSet('exp'), onCvc: cardSet('cvc'), onCName: cardSet('name'),
+      errNum: s.errs.num || '', errExp: s.errs.exp || '', errCvc: s.errs.cvc || '', errCName: s.errs.cname || '',
+      flipOn: () => this.setState({ flip: true }), flipOff: () => this.setState({ flip: false }), cardFlip: s.flip ? 'rotateY(180deg)' : 'rotateY(0deg)',
+      cardNum: numDisp, cardName: s.card.name || 'YOUR NAME', cardExp: s.card.exp || 'MM/YY', cardCvc: s.card.cvc || '•••', cardBrand: digits[0] === '4' ? 'VISA' : digits[0] === '5' ? 'MASTERCARD' : digits[0] === '3' ? 'AMEX' : 'CARD',
+      shipSummary: `${s.ship.first} ${s.ship.last}, ${s.ship.address}, ${s.ship.city} ${s.ship.zip}, ${s.ship.country}`, shipEmail: s.ship.email,
+      deliverySummary: s.delivery === 'express' ? 'Express · 1–2 business days' : 'Standard · 4–6 business days',
+      paySummary: s.pay === 'card' ? `${digits[0] === '4' ? 'Visa' : 'Card'} ending ${digits.slice(-4) || '••••'}` : payNames[s.pay],
+      editShip: () => this.setState({ step: 1 }), editPay: () => this.setState({ step: 2 }),
+      // success
+      lo: lo ? { id: lo.id, total: this.fmt(lo.total), eta: lo.eta, email: lo.email || s.ship.email, pay: payNames[lo.pay] || 'Card', items: lo.items.map(i => { const p = this.prod(i.id); return { img: C.U(p.img, 300), name: p.name, code: p.code, color: C.SW[i.color][0], qty: i.qty, price: this.fmt(p.price * i.qty) }; }) } : { id: '—', total: '$0', eta: '—', email: '', pay: '', items: [] },
+      trackOrder: go('orders'),
+      // orders
+      orderRows: s.orders.map(orderRow), orderCount: s.orders.length,
+      // sale
+      saleTiers: tiers.map(([id, l]) => ({ label: l, count: saleAll.filter(p => tierOk(p, id)).length, bg: s.saleTier === id ? 'var(--color-text)' : 'transparent', color: s.saleTier === id ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ saleTier: id }) })),
+      saleCats: [{ id: 'all', name: 'Everything' }, ...C.CATS.filter(c => saleAll.some(p => p.cat === c.id))].map(c => ({ name: c.name, under: s.saleCat === c.id ? 'var(--color-accent)' : 'transparent', color: s.saleCat === c.id ? 'var(--color-text)' : muted, pick: () => this.setState({ saleCat: c.id }) })),
+      saleCards: cards(saleL), saleCount: saleL.length, saleTotal: saleAll.length,
+      // vendors
+      vendorCards: C.V.map((v, i) => ({ ...v, cover: C.U(C.VCOVER[v.id], 900), idx: pad(i + 1), initials: v.name.split(' ').map(w => w[0]).slice(0, 2).join(''), count: C.P.filter(p => p.v === v.id).length, followed: s.follow.includes(v.id), followLabel: s.follow.includes(v.id) ? 'Following' : 'Follow', follow: () => this.setState(st => ({ follow: st.follow.includes(v.id) ? st.follow.filter(x => x !== v.id) : [...st.follow, v.id] })), go: go('vendor', { vid: v.id, vdCat: 'all' }), codes: C.P.filter(p => p.v === v.id).map(p => p.code).join(' · ') })),
+      vd: { ...VD, cover: C.U(C.VCOVER[VD.id], 2000), initials: VD.name.split(' ').map(w => w[0]).slice(0, 2).join(''), count: vdAll.length, onSale: vdAll.filter(p => p.was).length, sold: vdAll.reduce((a, p) => a + p.sold, 0).toLocaleString('en-US') },
+      vdFollowLabel: s.follow.includes(VD.id) ? 'Following' : 'Follow', vdFollowClass: s.follow.includes(VD.id) ? 'btn btn-secondary' : 'btn btn-primary',
+      vdFollow: () => this.setState(st => ({ follow: st.follow.includes(VD.id) ? st.follow.filter(x => x !== VD.id) : [...st.follow, VD.id] })),
+      vdCats: [{ id: 'all', name: 'All' }, ...vdCats.map(id => ({ id, name: this.catName(id) }))].map(c => ({ name: c.name, under: s.vdCat === c.id ? 'var(--color-accent)' : 'transparent', color: s.vdCat === c.id ? 'var(--color-text)' : muted, pick: () => this.setState({ vdCat: c.id }) })),
+      vdCards: cards(vdAll.filter(p => s.vdCat === 'all' || p.cat === s.vdCat)),
+      otherVendors: C.V.filter(v => v.id !== VD.id).slice(0, 3).map(v => ({ name: v.name, spec: v.spec, loc: v.loc, go: go('vendor', { vid: v.id, vdCat: 'all' }) })),
+      motion: this.props.motion !== false,
+    };
+  }
+}
+</script>
+</body>
+</html>

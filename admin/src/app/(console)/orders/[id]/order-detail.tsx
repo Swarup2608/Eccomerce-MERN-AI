@@ -8,6 +8,7 @@ import { adminApi, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LA
 import { errorMessage } from "@/lib/auth";
 import { formatDate, formatInr, paiseToRupees, rupeesToPaise } from "@/lib/money";
 import { useLoad } from "@/lib/use-load";
+import { confirmDialog } from "@/components/dialog";
 
 const ACTION_LABELS: Record<OrderStatus, string> = {
   pending_payment: "Awaiting payment",
@@ -243,7 +244,7 @@ function RefundForm({ order, onDone, onError }: { order: Order; onDone: (order: 
     event.preventDefault();
     const paise = rupeesToPaise(amount);
     if (paise === null || paise <= 0 || paise > order.refundable) return onError(`Enter an amount up to ${formatInr(order.refundable)}`);
-    if (!window.confirm(`Refund ${formatInr(paise)} to ${order.customer.name}?`)) return;
+    if (!(await confirmDialog({ title: `Refund ${formatInr(paise)}?`, message: `The refund goes to ${order.customer.name}${reason ? ` · “${reason}”` : ""}. This can’t be undone.`, confirmLabel: "Issue refund", tone: "danger" }))) return;
     setPending(true);
     try {
       const updated = await adminApi.refundOrder(order.id, { amount: paise, reason });

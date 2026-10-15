@@ -1,33 +1,47 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { AccountNav } from "@/components/account-nav";
-import { CartLink } from "@/components/cart-link";
+import { HeaderBar, Logo } from "@/components/header-bar";
+import { getCategoryTree } from "@/lib/catalog";
 
-export function SiteHeader({ children }: { children?: ReactNode }) {
+export async function SiteHeader() {
+  const categories = await getCategoryTree().catch(() => []);
+  return <HeaderBar categories={categories} />;
+}
+
+const footLink = { color: "inherit", textDecoration: "none" } as const;
+const footHead = { fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", fontWeight: 600 } as const;
+const col = { display: "flex", flexDirection: "column", gap: 10, fontSize: 14 } as const;
+
+export function SiteFooter() {
   return (
-    <header className="border-b border-black/10 dark:border-white/10">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Storefront
-          </Link>
-          <Link href="/products" className="text-sm hover:underline">
-            Shop
-          </Link>
+    <footer style={{ borderTop: "1px solid var(--color-divider)" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "56px 32px 32px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 40 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, gridColumn: "span 2" }}>
+          <Logo size={28} />
+          <p style={{ margin: 0, fontSize: 14, maxWidth: 340, color: "color-mix(in srgb,var(--color-text) 65%,transparent)" }}>Tools and objects from independent makers, shipped together.</p>
         </div>
-        {/* A plain GET form: search works before any JavaScript has loaded. */}
-        <form action="/products" role="search" className="order-last w-full sm:order-none sm:w-auto">
-          <input type="search" name="q" placeholder="Search products" aria-label="Search products" maxLength={100} className="w-full rounded-md border border-black/15 bg-transparent px-3 py-1.5 text-sm outline-none focus:border-black/40 sm:w-64 dark:border-white/20" />
-        </form>
-        <nav className="flex items-center gap-4 text-sm">
-          {children}
-          <Link href="/account/wishlist" className="hover:underline">
-            Wishlist
-          </Link>
-          <CartLink />
-          <AccountNav />
-        </nav>
+        <div style={col}>
+          <span style={footHead}>Shop</span>
+          <Link href="/products" style={footLink}>All products</Link>
+          <Link href="/products?sort=newest" style={footLink}>New arrivals</Link>
+          <Link href="/products?featured=true" style={footLink}>Featured</Link>
+        </div>
+        <div style={col}>
+          <span style={footHead}>Help</span>
+          <Link href="/account/orders" style={footLink}>Order status</Link>
+          <Link href="/account/orders" style={footLink}>Returns</Link>
+          <Link href="/account/addresses" style={footLink}>Addresses</Link>
+        </div>
+        <div style={col}>
+          <span style={footHead}>Account</span>
+          <Link href="/account" style={footLink}>Your account</Link>
+          <Link href="/account/wishlist" style={footLink}>Saved items</Link>
+          <Link href="/login" style={footLink}>Sign in</Link>
+        </div>
       </div>
-    </header>
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "20px 32px 28px", display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", fontSize: 12, borderTop: "1px solid var(--color-divider)", color: "color-mix(in srgb,var(--color-text) 60%,transparent)" }}>
+        <span>© {new Date().getFullYear()} Vektor Supply. All rights reserved.</span>
+        <span>UPI · Cards · Netbanking · Cash on delivery</span>
+      </div>
+    </footer>
   );
 }

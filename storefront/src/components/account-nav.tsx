@@ -11,17 +11,17 @@ export function AccountNav() {
   if (user === undefined) return null;
   if (user) {
     return (
-      <Link href="/account" className="hover:underline">
+      <Link href="/account" className="no-underline hover:text-accent-700">
         Hi, {user.firstName}
       </Link>
     );
   }
   return (
     <>
-      <Link href="/login" className="hover:underline">
+      <Link href="/login" className="no-underline hover:text-accent-700">
         Sign in
       </Link>
-      <Link href="/register" className="hover:underline">
+      <Link href="/register" className="no-underline hover:text-accent-700">
         Create account
       </Link>
     </>

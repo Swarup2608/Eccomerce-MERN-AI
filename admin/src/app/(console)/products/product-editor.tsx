@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api";
 import { errorMessage } from "@/lib/auth";
 import { formatInr, paiseToRupees, rupeesToPaise } from "@/lib/money";
 import { useLoad } from "@/lib/use-load";
+import { confirmDialog, promptDialog } from "@/components/dialog";
 
 const ACCEPTED_IMAGES = "image/jpeg,image/png,image/webp,image/avif";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -218,10 +219,17 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
 
   async function adjustStock(row: VariantRow) {
     if (!product) return;
-    const answer = window.prompt(`Change stock of ${row.sku} by how much? Use a negative number to remove stock (current: ${row.stock}).`, "10");
-    if (!answer) return;
-    const delta = Number(answer);
-    if (!Number.isInteger(delta) || delta === 0) return setError("Enter a whole number other than 0");
+    const answer = await promptDialog({
+      title: `Adjust stock · ${row.sku}`,
+      message: `Currently ${row.stock} in stock. Use a negative number to remove stock.`,
+      label: "Change by",
+      defaultValue: "10",
+      inputMode: "numeric",
+      confirmLabel: "Update stock",
+      validate: (value) => (/^-?\d+$/.test(value.trim()) && Number(value) !== 0 ? null : "Enter a whole number other than 0"),
+    });
+    if (answer === null) return;
+    const delta = Number(answer.trim());
     try {
       const updated = await adminApi.adjustStock(product.id, row.sku, { delta });
       setVariants((rows) => rows.map((item) => (item.sku === row.sku ? { ...item, stock: String(updated.variants.find((variant) => variant.sku === row.sku)?.stock ?? item.stock) } : item)));
@@ -284,7 +292,7 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
   }
 
   async function remove() {
-    if (!product || !window.confirm(`Delete "${product.title}"? Products with orders are archived instead.`)) return;
+    if (!product || !(await confirmDialog({ title: `Delete “${product.title}”?`, message: "Products with orders are archived instead.", confirmLabel: "Delete product", tone: "danger" }))) return;
     try {
       const result = await adminApi.deleteProduct(product.id);
       if (result.archived) {

@@ -112,6 +112,9 @@ export interface OrderItem {
   options: Record<string, string>;
   image: string | null;
   unitPrice: number;
+  // Before any sale; missing on orders placed before sales existed.
+  listPrice?: number;
+  sale?: { id: string; name: string; label: string } | null;
   quantity: number;
   lineTotal: number;
 }
@@ -174,6 +177,50 @@ export interface CustomerDetail extends Customer {
   orders: Order[];
 }
 
+export type DiscountType = "percent" | "fixed";
+export type SaleScope = "all" | "categories" | "products";
+export type SaleStatus = "live" | "scheduled" | "ended" | "disabled";
+
+export interface SaleSummary {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  label: string;
+  discountType: DiscountType;
+  // Whole percent, or paise off each unit.
+  discountValue: number;
+  appliesTo: SaleScope;
+  categoryIds: string[];
+  productIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+  status: SaleStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Sale extends SaleSummary {
+  categories: { id: string; name: string; slug: string }[];
+  products: { id: string; title: string; slug: string; image: ProductImage | null; minPrice: number; maxPrice: number; status: ProductStatus }[];
+  stats: { orders: number; units: number; revenue: number; discountGiven: number };
+}
+
+export interface SaleInput {
+  name: string;
+  slug?: string;
+  description: string;
+  discountType: DiscountType;
+  discountValue: number;
+  appliesTo: SaleScope;
+  categoryIds: string[];
+  productIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+}
+
 export interface UploadTicket {
   key: string;
   uploadUrl: string;
@@ -221,6 +268,12 @@ export const adminApi = {
   updateOrderStatus: (id: string, input: { status: OrderStatus; note?: string; tracking?: { carrier: string; number: string; url: string } }) => call<{ order: Order }>(`/orders/${id}/status`, json("PATCH", input)).then((res) => res.order),
   refundOrder: (id: string, input: { amount?: number; reason: string }) => call<{ order: Order }>(`/orders/${id}/refund`, json("POST", input)).then((res) => res.order),
 
+  sales: (params: { q?: string; status?: string; page?: number; limit?: number }) => call<Page<SaleSummary>>(`/sales${query(params)}` as `/${string}`),
+  sale: (id: string) => call<{ sale: Sale }>(`/sales/${id}`).then((res) => res.sale),
+  createSale: (input: SaleInput) => call<{ sale: Sale }>("/sales", json("POST", input)).then((res) => res.sale),
+  updateSale: (id: string, input: Partial<SaleInput>) => call<{ sale: Sale }>(`/sales/${id}`, json("PATCH", input)).then((res) => res.sale),
+  deleteSale: (id: string) => call<void>(`/sales/${id}`, json("DELETE")),
+
   customers: (params: { q?: string; status?: string; page?: number; limit?: number }) => call<Page<Customer>>(`/customers${query(params)}` as `/${string}`),
   customer: (id: string) => call<{ customer: CustomerDetail }>(`/customers/${id}`).then((res) => res.customer),
   setCustomerStatus: (id: string, status: "active" | "suspended") => call<{ customer: CustomerDetail }>(`/customers/${id}/status`, json("PATCH", { status })).then((res) => res.customer),
@@ -262,5 +315,9 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   refunded: "Refunded",
   partially_refunded: "Partly refunded",
 };
+
+export const SALE_STATUS_LABELS: Record<SaleStatus, string> = { live: "Live", scheduled: "Scheduled", ended: "Ended", disabled: "Switched off" };
+
+export const SALE_SCOPE_LABELS: Record<SaleScope, string> = { all: "Whole catalogue", categories: "Categories", products: "Selected products" };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = { razorpay: "Razorpay", stripe: "Stripe", cod: "Cash on Delivery" };

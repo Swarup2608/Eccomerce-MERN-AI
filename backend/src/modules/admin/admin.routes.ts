@@ -13,6 +13,7 @@ import { z } from "zod";
 import { objectId, paginationSchema } from "../../lib/pagination.js";
 import { currentUserId } from "../../middleware/authorize.js";
 import { adminOrderRoutes } from "../orders/order.routes.js";
+import { adminSaleRoutes } from "../sales/sale.routes.js";
 import { CustomerAdminService } from "./customer.service.js";
 
 const customersQuerySchema = z.object({ q: z.string().trim().max(100).optional(), status: z.enum([USER_STATUSES.ACTIVE, USER_STATUSES.SUSPENDED, USER_STATUSES.INACTIVE]).optional() }).extend(paginationSchema.shape).strict();
@@ -29,6 +30,7 @@ export function adminRoutes(services: CommerceServices, authService: AuthService
   router.use("/products", guard, adminProductRoutes(createProductController(services.products, services.productHasOrders)));
   router.post("/uploads/images", guard, createUploadController(services.uploads).createImageUpload);
   router.use("/orders", guard, adminOrderRoutes(services.orders));
+  router.use("/sales", guard, adminSaleRoutes(services.sales));
 
   router.use("/stats", guard, statsRoutes(services));
   router.use("/customers", guard, customerRoutes(new CustomerAdminService(services.orders, authService)));

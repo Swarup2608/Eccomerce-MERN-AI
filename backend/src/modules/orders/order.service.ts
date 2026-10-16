@@ -197,9 +197,22 @@ export class OrderService {
       throw new HttpError(409, "CART_HAS_ISSUES", "Some items in your cart are unavailable or low on stock. Review your cart and try again.", problems.map((line) => ({ path: line.item.sku, message: line.status })));
     }
 
-    const items: IOrderItem[] = priced.map(({ item, product, variant }) => {
-      if (!product || !variant) throw new Error("priced line without product");
-      return { product: product._id, slug: product.slug, sku: variant.sku, title: product.title, brand: product.brand, options: variant.options, image: product.images[0]?.url ?? null, unitPrice: variant.price, quantity: item.quantity, lineTotal: variant.price * item.quantity };
+    const items: IOrderItem[] = priced.map(({ item, product, variant, priced: price }) => {
+      if (!product || !variant || !price) throw new Error("priced line without product");
+      return {
+        product: product._id,
+        slug: product.slug,
+        sku: variant.sku,
+        title: product.title,
+        brand: product.brand,
+        options: variant.options,
+        image: product.images[0]?.url ?? null,
+        unitPrice: price.price,
+        listPrice: price.listPrice,
+        sale: price.sale ? { id: price.sale.id, name: price.sale.name, label: price.sale.label } : null,
+        quantity: item.quantity,
+        lineTotal: price.price * item.quantity,
+      };
     });
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
     const shipping = shippingFor(subtotal);

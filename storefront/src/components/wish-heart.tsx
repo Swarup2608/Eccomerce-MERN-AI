@@ -4,11 +4,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { shopApi } from "@/lib/shop-api";
-import { useHref } from "@/lib/base-path";
 
 // Heart on a product card. Signed-out visitors are sent to sign in; otherwise it toggles the account wishlist.
 export function WishHeart({ productId }: { productId: string }) {
-  const to = useHref();
   const user = useSession();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -26,7 +24,7 @@ export function WishHeart({ productId }: { productId: string }) {
   }, [user, productId]);
 
   async function toggle() {
-    if (!user) return router.push(to(`/login?next=${to("/account/wishlist")}`));
+    if (!user) return router.push(`/login?next=/account/wishlist`);
     const next = !saved;
     setSaved(next);
     try {

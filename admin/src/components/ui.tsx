@@ -109,6 +109,10 @@ const STATUS_TONES: Record<string, Tone> = {
   refunded: "neutral",
   partially_refunded: "amber",
   suspended: "red",
+  live: "green",
+  scheduled: "blue",
+  ended: "neutral",
+  disabled: "neutral",
 };
 
 export function StatusPill({ status, label }: { status: string; label?: string }) {

@@ -197,12 +197,12 @@ a:hover{color:var(--color-accent-700)}
 @keyframes vk-fade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.vk-dialog[open],.vk-dialog::backdrop{animation:none}}
 
-/* ---------- /v1 redesign ("Vektor Store v3"): same tokens, rounded corners, glass header, overlay cards ---------- */
-.vk-v1{--box-r:22px;--pill:999px}
-.vk-v1 .border.border-divider,.vk-v1 .border-dashed,.vk-v1 .vk-choice{border-radius:calc(var(--box-r) * .75)}
-.vk-v1 :is(input:not([type=checkbox]):not([type=radio]),select){border-radius:var(--pill)}
-.vk-v1 textarea{border-radius:calc(var(--box-r) * .6)}
-.vk-v1 .bg-surface.overflow-hidden{border-radius:calc(var(--box-r) * .5)}
+/* ---------- Storefront shape: rounded corners, pill inputs (applied on <body>) ---------- */
+.vk-store{--box-r:22px;--pill:999px}
+.vk-store .border.border-divider,.vk-store .border-dashed,.vk-store .vk-choice{border-radius:calc(var(--box-r) * .75)}
+.vk-store :is(input:not([type=checkbox]):not([type=radio]),select){border-radius:var(--pill)}
+.vk-store textarea{border-radius:calc(var(--box-r) * .6)}
+.vk-store .bg-surface.overflow-hidden{border-radius:calc(var(--box-r) * .5)}
 .vk3-header{background:color-mix(in srgb,var(--color-bg) 84%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .vk3-header nav a:hover{color:var(--color-accent-700)!important}
 @media (max-width:1000px){.vk-hide-md{display:none!important}}

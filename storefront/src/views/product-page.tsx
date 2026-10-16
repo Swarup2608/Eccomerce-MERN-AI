@@ -4,10 +4,8 @@ import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/product-card";
 import { SiteHeader } from "@/components/site-header";
 import { getProduct, listProducts, type AttributeDef, type AttributeValue } from "@/lib/catalog";
-import { ProductGridV3 } from "@/components/product-card-v3";
 import { Accordion, Gallery } from "@/components/product-gallery";
 import { PurchasePanel } from "@/components/purchase-panel";
-import { SiteHeaderV1 } from "@/components/v1/site-header";
 
 export async function productMetadata(slug: string): Promise<Metadata> {
   const product = await getProduct(slug).catch(() => null);
@@ -23,9 +21,7 @@ const formatValue = (def: AttributeDef, value: AttributeValue): string => {
 
 const muted = (pct: number) => `color-mix(in srgb,var(--color-text) ${pct}%,transparent)`;
 
-// Shared by /products/[slug] (original design) and /v1/products/[slug] (redesign).
-export async function ProductPage({ slug, v1 = false }: { slug: string; v1?: boolean }) {
-  const base = v1 ? "/v1" : "";
+export async function ProductPage({ slug }: { slug: string }) {
   const product = await getProduct(slug);
   if (!product) notFound();
 
@@ -42,16 +38,16 @@ export async function ProductPage({ slug, v1 = false }: { slug: string; v1?: boo
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-      {v1 ? <SiteHeaderV1 /> : <SiteHeader />}
+      <SiteHeader />
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 32px 96px", width: "100%" }}>
         <div style={{ fontSize: 13, display: "flex", gap: 8, flexWrap: "wrap", color: muted(60), marginBottom: 24 }}>
-          <Link href={base || "/"} style={{ color: "inherit" }}>
+          <Link href={"/"} style={{ color: "inherit" }}>
             Home
           </Link>
           {product.breadcrumbs.map((crumb) => (
             <span key={crumb.slug} style={{ display: "flex", gap: 8 }}>
               <span>/</span>
-              <Link href={`${base}/products?category=${crumb.slug}`} style={{ color: "inherit" }}>
+              <Link href={`/products?category=${crumb.slug}`} style={{ color: "inherit" }}>
                 {crumb.name}
               </Link>
             </span>
@@ -64,7 +60,7 @@ export async function ProductPage({ slug, v1 = false }: { slug: string; v1?: boo
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {product.brand ? (
-                <Link href={`${base}/products?brand=${encodeURIComponent(product.brand)}`} style={{ fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", textDecoration: "none" }}>
+                <Link href={`/products?brand=${encodeURIComponent(product.brand)}`} style={{ fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", textDecoration: "none" }}>
                   {product.brand} →
                 </Link>
               ) : null}
@@ -77,7 +73,7 @@ export async function ProductPage({ slug, v1 = false }: { slug: string; v1?: boo
         {more.length ? (
           <section data-reveal="" style={{ marginTop: 96 }}>
             <h2 style={{ margin: "0 0 28px", fontSize: "clamp(32px,3.4vw,48px)" }}>You may also like</h2>
-            {v1 ? <ProductGridV3 products={more} min={240} /> : <ProductGrid products={more} min={230} />}
+            <ProductGrid products={more} min={240} />
           </section>
         ) : null}
       </main>

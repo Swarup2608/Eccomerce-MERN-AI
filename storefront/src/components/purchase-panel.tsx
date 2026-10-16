@@ -7,16 +7,15 @@ import { FormError } from "@/components/form-field";
 import { errorMessage } from "@/lib/auth";
 import { addToCart } from "@/lib/cart";
 import type { ProductDetail } from "@/lib/catalog";
-import { formatInr } from "@/lib/money";
+import { formatDateTime, formatInr } from "@/lib/money";
 import { useSession } from "@/lib/session";
-import { shopApi } from "@/lib/shop-api";
-import { useHref } from "@/lib/base-path";
+import { shopApi, type WishlistGroup } from "@/lib/shop-api";
+import { promptDialog } from "@/components/dialog";
 
 const divider = "1px solid var(--color-divider)";
 const stepBtn = { width: 48, height: 52, background: "none", border: 0, fontSize: 20, cursor: "pointer", color: "var(--color-text)" } as const;
 
 export function PurchasePanel({ product }: { product: ProductDetail }) {
-  const to = useHref();
   const router = useRouter();
   const axes = product.attributeDefs.filter((def) => def.variantAxis);
   // Preselect the first in-stock variant so the price shown is a real one.
@@ -26,6 +25,7 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const wish = useWish(product.id);
 
   const variant = useMemo(() => product.variants.find((candidate) => axes.every((axis) => candidate.options[axis.key] === choice[axis.key])), [product.variants, axes, choice]);
 
@@ -51,7 +51,7 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
     try {
       await addToCart({ productId: product.id, sku: variant.sku, quantity, slug: product.slug, title: product.title, brand: product.brand, image: product.images[0] ?? null, options: variant.options, unitPrice: variant.price });
       setAdded(true);
-      if (thenCheckout) router.push(to("/checkout"));
+      if (thenCheckout) router.push("/checkout");
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -75,6 +75,11 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
           </>
         ) : null}
       </div>
+      {product.sale ? (
+        <Link href={`/products?sale=${product.sale.slug}`} style={{ marginTop: -12, fontSize: 14, textDecoration: "none", color: "var(--color-accent-700)" }}>
+          <b>{product.sale.name}</b> · {product.sale.label} · ends {formatDateTime(product.sale.endsAt)} →
+        </Link>
+      ) : null}
 
       {axes.map((axis) => (
         <div key={axis.key} style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 20, borderTop: divider }}>
@@ -124,8 +129,9 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
           <span>{pending ? "Adding…" : inStock ? "Add to bag" : "Sold out"}</span>
           <span>{formatInr(price * quantity)}</span>
         </button>
-        <WishlistButton productId={product.id} />
+        <WishlistButton productId={product.id} wish={wish} />
       </div>
+      <SavedInList productId={product.id} wish={wish} onError={setError} />
       <button type="button" className="btn btn-secondary" disabled={pending || !inStock} onClick={() => add(true)} style={{ minHeight: 48, justifyContent: "space-between" }}>
         <span>Buy now — skip the bag</span>
         <span>→</span>
@@ -133,7 +139,7 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
       {added ? (
         <div role="status" style={{ fontSize: 14, borderLeft: "2px solid var(--color-accent)", paddingLeft: 10 }}>
           Added to your bag.{" "}
-          <Link href={to("/cart")} style={{ fontWeight: 600 }}>
+          <Link href={"/cart"} style={{ fontWeight: 600 }}>
             View bag
           </Link>
         </div>
@@ -169,17 +175,29 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
   );
 }
 
-function WishlistButton({ productId }: { productId: string }) {
-  const to = useHref();
+interface WishState {
+  saved: boolean;
+  // Which of the customer's lists holds the product (null = Saved items).
+  listId: string | null;
+  lists: WishlistGroup[];
+}
+
+const NEW_LIST = "__new";
+
+// Whether the product is saved and in which list. Loads the customer's wishlist once (it is capped at 200 items).
+function useWish(productId: string) {
   const user = useSession();
-  const [saved, setSaved] = useState<boolean | null>(null);
-  const [pending, setPending] = useState(false);
+  const [wish, setWish] = useState<WishState | null>(null);
 
   useEffect(() => {
     if (!user) return;
     let current = true;
-    shopApi.wishlistIds().then(
-      (ids) => current && setSaved(ids.includes(productId)),
+    shopApi.wishlist().then(
+      ({ items, lists }) => {
+        if (!current) return;
+        const item = items.find((entry) => entry.product.id === productId);
+        setWish({ saved: Boolean(item), listId: item?.listId ?? null, lists });
+      },
       () => undefined,
     );
     return () => {
@@ -187,20 +205,29 @@ function WishlistButton({ productId }: { productId: string }) {
     };
   }, [user, productId]);
 
+  return { user, wish, setWish };
+}
+
+type Wish = ReturnType<typeof useWish>;
+
+function WishlistButton({ productId, wish: { user, wish, setWish } }: { productId: string; wish: Wish }) {
+  const [pending, setPending] = useState(false);
+
   if (user === null) {
     return (
-      <Link href={to(`/login?next=${to("/account/wishlist")}`)} className="btn btn-secondary" title="Sign in to save items" style={{ minHeight: 52, minWidth: 96 }}>
+      <Link href={`/login?next=/account/wishlist`} className="btn btn-secondary" title="Sign in to save items" style={{ minHeight: 52, minWidth: 96 }}>
         Save
       </Link>
     );
   }
 
   async function toggle() {
+    if (!wish) return;
     setPending(true);
     try {
-      if (saved) await shopApi.removeFromWishlist(productId);
+      if (wish.saved) await shopApi.removeFromWishlist(productId);
       else await shopApi.addToWishlist(productId);
-      setSaved(!saved);
+      setWish({ ...wish, saved: !wish.saved, listId: null });
     } catch {
       // Leave the button as it was; the next page load shows the real state.
     }
@@ -208,8 +235,59 @@ function WishlistButton({ productId }: { productId: string }) {
   }
 
   return (
-    <button type="button" className="btn btn-secondary" onClick={toggle} disabled={pending || saved === null} aria-pressed={saved ?? false} style={{ minHeight: 52, minWidth: 96 }}>
-      {saved ? "Saved ♥" : "Save"}
+    <button type="button" className="btn btn-secondary" onClick={toggle} disabled={pending || !wish} aria-pressed={wish?.saved ?? false} style={{ minHeight: 52, minWidth: 96 }}>
+      {wish?.saved ? "Saved ♥" : "Save"}
     </button>
+  );
+}
+
+// Once saved, the product can be filed into one of the customer's named lists (or a new one).
+function SavedInList({ productId, wish: { wish, setWish }, onError }: { productId: string; wish: Wish; onError: (message: string | null) => void }) {
+  const [pending, setPending] = useState(false);
+  if (!wish?.saved) return null;
+
+  async function move(value: string) {
+    if (!wish) return;
+    onError(null);
+    let listId: string | null = value || null;
+    let lists = wish.lists;
+    if (value === NEW_LIST) {
+      const name = await promptDialog({ title: "New list", label: "List name", placeholder: "e.g. Birthday ideas", confirmLabel: "Create list", validate: (text) => (text.trim() ? null : "Enter a name") });
+      if (!name) return;
+      setPending(true);
+      try {
+        const created = await shopApi.createWishlistList(name.trim());
+        lists = [...lists, created];
+        listId = created.id;
+      } catch (err) {
+        setPending(false);
+        return onError(errorMessage(err));
+      }
+    }
+    setPending(true);
+    try {
+      await shopApi.addToWishlist(productId, listId);
+      setWish({ ...wish, lists, listId });
+    } catch (err) {
+      onError(errorMessage(err));
+    }
+    setPending(false);
+  }
+
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, flexWrap: "wrap" }}>
+      Saved in
+      <select className="input" value={wish.listId ?? ""} disabled={pending} onChange={(event) => move(event.target.value)} style={{ width: "auto", minHeight: 40 }}>
+        {wish.lists.map((list) => (
+          <option key={list.id ?? "default"} value={list.id ?? ""}>
+            {list.name}
+          </option>
+        ))}
+        <option value={NEW_LIST}>+ New list…</option>
+      </select>
+      <Link href={"/account/wishlist"} style={{ fontSize: 13 }}>
+        View lists
+      </Link>
+    </label>
   );
 }

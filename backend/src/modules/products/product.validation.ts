@@ -105,6 +105,9 @@ const listQueryBase = z
     maxPrice: optionalPrice,
     inStock: z.enum(["true", "false"]).optional(),
     featured: z.enum(["true", "false"]).optional(),
+    // One sale by slug, or any live sale.
+    sale: slugSchema.optional(),
+    onSale: z.enum(["true", "false"]).optional(),
     sort: z.enum(PRODUCT_SORTS).optional(),
   })
   .extend(paginationSchema.shape)
@@ -117,6 +120,8 @@ export interface ProductListQuery {
   maxPrice: number | undefined;
   inStock: boolean;
   featured: boolean;
+  sale: string | undefined;
+  onSale: boolean;
   sort: ProductSort;
   page: number;
   limit: number;
@@ -156,6 +161,8 @@ export function parseProductListQuery(query: Record<string, unknown>): ProductLi
     maxPrice: parsed.maxPrice,
     inStock: parsed.inStock === "true",
     featured: parsed.featured === "true",
+    sale: parsed.sale,
+    onSale: parsed.onSale === "true",
     sort: parsed.sort ?? (parsed.q ? "relevance" : "newest"),
     page: parsed.page,
     limit: parsed.limit,

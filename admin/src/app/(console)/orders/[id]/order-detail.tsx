@@ -65,9 +65,15 @@ export function OrderDetail({ orderId }: { orderId: string }) {
                     <p className="text-xs text-black/50 dark:text-white/50">
                       {Object.values(item.options).join(" / ") || "Standard"} · <span className="font-mono">{item.sku}</span>
                     </p>
+                    {item.sale ? (
+                      <p className="text-xs text-accent-700">
+                        {item.sale.name} · {item.sale.label}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="tabular-nums text-black/60 dark:text-white/60">
                     {item.quantity} × {formatInr(item.unitPrice)}
+                    {item.listPrice && item.listPrice > item.unitPrice ? <s className="ml-1.5 text-xs">{formatInr(item.listPrice)}</s> : null}
                   </span>
                   <span className="w-24 text-right tabular-nums">{formatInr(item.lineTotal)}</span>
                 </li>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { Logo } from "@/components/header-bar";
-import { useHref } from "@/lib/base-path";
 
 const PHOTO = "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1600&q=80";
 const eyebrow = "text-xs uppercase tracking-[0.16em] text-accent-700";
@@ -11,7 +10,6 @@ const eyebrow = "text-xs uppercase tracking-[0.16em] text-accent-700";
 // Editorial photo panel from the design's Login / Register screen: brand bar on top, headline card at the bottom,
 // and a slight parallax as the pointer moves.
 export function AuthArt({ title, blurb }: { title: ReactNode; blurb: string }) {
-  const to = useHref();
   const [shift, setShift] = useState({ x: 0, y: 0 });
   return (
     <div
@@ -26,10 +24,10 @@ export function AuthArt({ title, blurb }: { title: ReactNode; blurb: string }) {
       <img src={PHOTO} alt="" className="absolute -left-[4%] -top-[4%] h-[108%] w-[108%] max-w-none object-cover transition-[translate] duration-900 ease-[var(--ease)] motion-reduce:transition-none" style={{ translate: `${shift.x}px ${shift.y}px` }} />
       <div className="relative flex h-full flex-col justify-between gap-6 p-10">
         <div className="flex items-center justify-between gap-4 bg-background px-4 py-3">
-          <Link href={to("/")} aria-label="Vektor home" className="no-underline">
+          <Link href={"/"} aria-label="Vektor home" className="no-underline">
             <Logo size={22} />
           </Link>
-          <Link href={to("/products")} className="vk-link text-[13px]">
+          <Link href={"/products"} className="vk-link text-[13px]">
             Back to shop →
           </Link>
         </div>
@@ -44,13 +42,12 @@ export function AuthArt({ title, blurb }: { title: ReactNode; blurb: string }) {
 }
 
 function MobileBar() {
-  const to = useHref();
   return (
     <div className="flex items-center justify-between border-b border-divider px-6 py-4 lg:hidden">
-      <Link href={to("/")} aria-label="Vektor home" className="no-underline">
+      <Link href={"/"} aria-label="Vektor home" className="no-underline">
         <Logo size={20} />
       </Link>
-      <Link href={to("/products")} className="vk-link text-[13px]">
+      <Link href={"/products"} className="vk-link text-[13px]">
         Back to shop →
       </Link>
     </div>
@@ -83,20 +80,19 @@ const SLIDE = "transition-transform duration-1000 ease-[cubic-bezier(.75,0,.2,1)
 // The design's sign in ⇄ register screen. Both forms live on one vertical track; switching slides the photo panel to
 // the other side, the form column the opposite way, and the track up or down. The URL follows without a reload.
 export function AuthSplit({ initial, login, register }: { initial: "login" | "register"; login: ReactNode; register: ReactNode }) {
-  const to = useHref();
   const [reg, setReg] = useState(initial === "register");
 
   function show(toRegister: boolean) {
     return (event: MouseEvent) => {
       event.preventDefault();
       setReg(toRegister);
-      window.history.replaceState(window.history.state, "", to(toRegister ? "/register" : "/login"));
+      window.history.replaceState(window.history.state, "", (toRegister ? "/register" : "/login"));
       document.title = `${toRegister ? "Create an account" : "Sign in"} | Vektor`;
     };
   }
 
   const switchLink = (toRegister: boolean, text: string) => (
-    <a href={to(toRegister ? "/register" : "/login")} onClick={show(toRegister)} className="font-medium underline">
+    <a href={(toRegister ? "/register" : "/login")} onClick={show(toRegister)} className="font-medium underline">
       {text}
     </a>
   );
@@ -122,7 +118,7 @@ export function AuthSplit({ initial, login, register }: { initial: "login" | "re
                 or
                 <span className="h-px flex-1 bg-divider" />
               </div>
-              <Link href={to("/products")} className="self-start text-[13px]">
+              <Link href={"/products"} className="self-start text-[13px]">
                 Continue as guest →
               </Link>
             </div>

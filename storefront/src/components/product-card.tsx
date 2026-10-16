@@ -5,64 +5,46 @@ import { WishHeart } from "@/components/wish-heart";
 
 const muted = (pct: number) => `color-mix(in srgb,var(--color-text) ${pct}%,transparent)`;
 
-export function Price({ min, max, compareAt }: { min: number; max?: number; compareAt?: number | null }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-      <span style={{ fontSize: 16, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{max && max !== min ? `From ${formatInr(min)}` : formatInr(min)}</span>
-      {compareAt && compareAt > min ? <span style={{ fontSize: 13, textDecoration: "line-through", color: muted(50) }}>{formatInr(compareAt)}</span> : null}
-    </span>
-  );
-}
-
-// Mirrors ProductCardV2: 4:5 image, discount/tag chips, wishlist heart, hover zoom and a bar at the bottom of the image.
+// Product card: rounded 4:5 image that lifts on hover, name and price in a pill over the photo, and a round "+"
+// that turns. Listing data has no SKU, so "+" opens the product to pick options rather than adding blindly.
 export function ProductCard({ product }: { product: ProductCardData }) {
   const discount = product.compareAtPrice && product.compareAtPrice > product.minPrice ? Math.round((1 - product.minPrice / product.compareAtPrice) * 100) : 0;
   const href = `/products/${product.slug}`;
+  const price = product.maxPrice !== product.minPrice ? `From ${formatInr(product.minPrice)}` : formatInr(product.minPrice);
   return (
-    <article className="vk-card" style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0, height: "100%" }}>
-      <div style={{ position: "relative" }}>
-        <Link href={href} style={{ position: "relative", display: "block", aspectRatio: "4/5", overflow: "hidden", background: "var(--color-surface)", borderRadius: "var(--box-r,0px)" }} aria-label={product.title}>
+    <article className="vk3-card" style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0, height: "100%" }}>
+      <div className="vk3-media" style={{ position: "relative", aspectRatio: "4/5", overflow: "hidden", borderRadius: "var(--box-r,0px)", background: "var(--color-surface)" }}>
+        <Link href={href} aria-label={product.title} style={{ position: "absolute", inset: 0, display: "block" }}>
           {product.image?.url ? (
-            <span
-              role="img"
-              aria-label={product.image.alt || product.title}
-              className="vk-card-img"
-              style={{ display: "block", position: "absolute", inset: 0, width: "100%", height: "100%", background: `var(--color-surface) url(${product.image.url}) center/cover no-repeat` }}
-            />
+            <span role="img" aria-label={product.image.alt || product.title} className="vk3-img" style={{ position: "absolute", inset: 0, display: "block", background: `var(--color-surface) url(${product.image.url}) center/cover no-repeat` }} />
           ) : (
-            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: muted(40) }}>No image</span>
+            <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 12, color: muted(40) }}>No image</span>
           )}
-          <span style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {discount > 0 ? (
-              <span className="tag tag-accent" style={{ fontWeight: 600 }}>
-                −{discount}%
-              </span>
-            ) : null}
-            {!product.inStock ? (
-              <span className="tag tag-neutral" style={{ background: "var(--color-bg)" }}>
-                Sold out
-              </span>
-            ) : null}
-          </span>
-          <span className="vk-card-bar" style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
-            <span className="btn btn-primary" style={{ width: "100%", justifyContent: "space-between", minHeight: 44, background: "var(--color-text)", borderColor: "var(--color-text)", color: "var(--color-bg)" }}>
-              <span>View product</span>
-              <span>{formatInr(product.minPrice)}</span>
-            </span>
-          </span>
         </Link>
+        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }}>
+          {discount > 0 ? <span className="tag tag-accent">{product.sale ? product.sale.label : `−${discount}%`}</span> : null}
+          {product.isFeatured ? <span className="tag tag-neutral">Featured</span> : null}
+          {!product.inStock ? <span className="tag tag-neutral">Sold out</span> : null}
+        </div>
         <WishHeart productId={product.id} />
+        <div style={{ position: "absolute", left: 10, right: 10, bottom: 10, display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1, padding: "9px 16px", background: "var(--color-bg)", borderRadius: "var(--pill,0px)" }}>
+            <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.title}</span>
+            <span style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+              <b style={{ fontWeight: 600 }}>{price}</b>
+              {discount > 0 && product.compareAtPrice ? <span style={{ textDecoration: "line-through", color: muted(50) }}>{formatInr(product.compareAtPrice)}</span> : null}
+            </span>
+          </div>
+          <Link href={href} aria-label={`Choose options for ${product.title}`} className="vk3-plus" style={{ pointerEvents: "auto", width: 46, height: 46, flex: "none", display: "grid", placeItems: "center", borderRadius: 999, background: "var(--color-text)", color: "var(--color-bg)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </Link>
+        </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
-          <span style={{ fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", color: muted(60), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.brand}</span>
-        </div>
-        <Link href={href} className="vk-card-name" style={{ fontFamily: "var(--font-heading)", fontWeight: "var(--font-heading-weight)", fontSize: 19, lineHeight: 1.2, color: "var(--color-text)", textDecoration: "none" }}>
-          {product.title}
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
-          <Price min={product.minPrice} max={product.maxPrice} compareAt={product.compareAtPrice} />
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "0 4px", fontSize: 12, color: muted(62) }}>
+        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.brand}</span>
+        <span style={{ flex: "none" }}>{product.inStock ? "In stock" : "Out of stock"}</span>
       </div>
     </article>
   );
@@ -70,7 +52,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
 export function ProductGrid({ products, min = 240 }: { products: ProductCardData[]; min?: number }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${min}px,1fr))`, gap: "40px 20px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${min}px,1fr))`, gap: "36px 16px" }}>
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

@@ -14,6 +14,7 @@ export interface CartLine {
   options: Record<string, string>;
   unitPrice: number;
   compareAtPrice: number | null;
+  sale: { name: string; slug: string; label: string } | null;
   quantity: number;
   lineTotal: number;
   available: number;
@@ -51,7 +52,7 @@ export interface Order {
   orderNumber: string;
   status: OrderStatus;
   statusHistory: { status: OrderStatus; at: string; note: string }[];
-  items: { productId: string; slug: string; sku: string; title: string; brand: string; options: Record<string, string>; image: string | null; unitPrice: number; quantity: number; lineTotal: number }[];
+  items: { productId: string; slug: string; sku: string; title: string; brand: string; options: Record<string, string>; image: string | null; unitPrice: number; listPrice?: number; sale?: { id: string; name: string; label: string } | null; quantity: number; lineTotal: number }[];
   shippingAddress: Omit<Address, "id" | "isDefault">;
   pricing: { subtotal: number; shipping: number; discount: number; total: number };
   payment: { method: PaymentMethod; status: "pending" | "paid" | "failed" | "refunded" | "partially_refunded"; amountPaid: number; amountRefunded: number; refunds: { amount: number; status: string; createdAt: string }[] };
@@ -79,7 +80,15 @@ export interface CheckoutConfig {
 export interface WishlistEntry {
   product: ProductCardData;
   available: boolean;
+  // Null for the default "Saved items" list.
+  listId: string | null;
   addedAt: string;
+}
+
+export interface WishlistGroup {
+  id: string | null;
+  name: string;
+  count: number;
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -95,9 +104,14 @@ export const shopApi = {
   removeFromCart: (sku: string) => call<{ cart: Cart }>(`/cart/items/${encodeURIComponent(sku)}`, json("DELETE")).then((res) => res.cart),
   mergeCart: (items: { productId: string; sku: string; quantity: number }[]) => call<{ cart: Cart }>("/cart/merge", json("POST", { items })).then((res) => res.cart),
 
-  wishlist: () => call<{ items: WishlistEntry[] }>("/wishlist").then((res) => res.items),
+  wishlist: () => call<{ items: WishlistEntry[]; lists: WishlistGroup[] }>("/wishlist"),
   wishlistIds: () => call<{ productIds: string[] }>("/wishlist/ids").then((res) => res.productIds),
-  addToWishlist: (productId: string) => call<void>(`/wishlist/${productId}`, json("PUT")),
+  // Without a listId an already-saved product stays in its list; with one (null = Saved items) it moves there.
+  addToWishlist: (productId: string, listId?: string | null) => call<void>(`/wishlist/${productId}`, json("PUT", listId === undefined ? undefined : { listId })),
+  wishlistLists: () => call<{ lists: WishlistGroup[] }>("/wishlist/lists").then((res) => res.lists),
+  createWishlistList: (name: string) => call<{ list: WishlistGroup }>("/wishlist/lists", json("POST", { name })).then((res) => res.list),
+  renameWishlistList: (id: string, name: string) => call<{ list: WishlistGroup }>(`/wishlist/lists/${id}`, json("PATCH", { name })).then((res) => res.list),
+  deleteWishlistList: (id: string, removeItems: boolean) => call<void>(`/wishlist/lists/${id}${removeItems ? "?removeItems=true" : ""}`, json("DELETE")),
   removeFromWishlist: (productId: string) => call<void>(`/wishlist/${productId}`, json("DELETE")),
 
   addresses: () => call<{ addresses: Address[] }>("/addresses").then((res) => res.addresses),

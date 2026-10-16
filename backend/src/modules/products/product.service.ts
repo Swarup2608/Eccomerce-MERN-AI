@@ -7,6 +7,7 @@ import type { AuditRecorder } from "../audit/audit.service.js";
 import { Category } from "../categories/category.model.js";
 import { attributeValuesSchema, variantOptionsSchema, type CategoryService } from "../categories/category.service.js";
 import type { AttributeDef } from "../categories/category.validation.js";
+import { NO_SALES, type Pricer, type SaleBadge, type SalePrice, type SaleService } from "../sales/sale.service.js";
 import type { UploadService } from "../uploads/upload.service.js";
 import { Product, type AttributeValue, type IProduct, type IProductImage, type IVariant, type ProductStatus } from "./product.model.js";
 import type { CreateProductInput, ProductListQuery, SetStockInput, UpdateProductInput, VariantInput } from "./product.validation.js";
@@ -38,6 +39,8 @@ export interface ProductCard {
   compareAtPrice: number | null;
   inStock: boolean;
   isFeatured: boolean;
+  // The live sale behind minPrice, if any; prices above are already discounted.
+  sale: SaleBadge | null;
 }
 
 export interface PublicProduct extends Omit<ProductCard, "image"> {
@@ -107,32 +110,41 @@ const toAdminProduct = (doc: ProductDoc): AdminProduct => ({
 
 const activeVariants = (doc: Pick<IProduct, "variants">): IVariant[] => doc.variants.filter((variant) => variant.isActive);
 
-export const toPublicVariant = (variant: IVariant): PublicVariant => ({
+// The struck-through "was" price: the list price when a sale applies (or the compare-at price if that is higher).
+export const wasPrice = (variant: Pick<IVariant, "compareAtPrice">, priced: SalePrice): number | null => {
+  const was = priced.sale ? Math.max(priced.listPrice, variant.compareAtPrice ?? 0) : (variant.compareAtPrice ?? null);
+  return was && was > priced.price ? was : null;
+};
+
+export const toPublicVariant = (variant: IVariant, priced: SalePrice = { price: variant.price, listPrice: variant.price, sale: null }): PublicVariant => ({
   sku: variant.sku,
   options: variant.options,
-  price: variant.price,
-  compareAtPrice: variant.compareAtPrice ?? null,
+  price: priced.price,
+  compareAtPrice: wasPrice(variant, priced),
   inStock: variant.stock > 0,
   available: Math.min(variant.stock, MAX_VISIBLE_STOCK),
 });
 
-export const toProductCard = (doc: ProductDoc): ProductCard => {
-  const cheapest = activeVariants(doc).reduce<IVariant | undefined>((best, variant) => (!best || variant.price < best.price ? variant : best), undefined);
+export const toProductCard = (doc: ProductDoc, pricer: Pricer = NO_SALES): ProductCard => {
+  const priced = activeVariants(doc).map((variant) => ({ variant, ...pricer(doc, variant.price) }));
+  const cheapest = priced.reduce<(typeof priced)[number] | undefined>((best, row) => (!best || row.price < best.price ? row : best), undefined);
   return {
     id: doc._id.toString(),
     title: doc.title,
     slug: doc.slug,
     brand: doc.brand,
     image: doc.images[0] ? { key: doc.images[0].key, url: doc.images[0].url, alt: doc.images[0].alt } : null,
-    minPrice: doc.minPrice,
-    maxPrice: doc.maxPrice,
-    compareAtPrice: cheapest?.compareAtPrice ?? null,
+    // A product with no active variant (only ever seen in a wishlist) keeps its stored range.
+    minPrice: cheapest ? cheapest.price : doc.minPrice,
+    maxPrice: priced.length ? Math.max(...priced.map((row) => row.price)) : doc.maxPrice,
+    compareAtPrice: cheapest ? wasPrice(cheapest.variant, cheapest) : null,
     inStock: doc.totalStock > 0,
     isFeatured: doc.isFeatured,
+    sale: cheapest?.sale ?? priced.find((row) => row.sale)?.sale ?? null,
   };
 };
 
-const CARD_PROJECTION = { title: 1, slug: 1, brand: 1, images: { $slice: 1 }, minPrice: 1, maxPrice: 1, totalStock: 1, isFeatured: 1, "variants.price": 1, "variants.compareAtPrice": 1, "variants.isActive": 1 } as const;
+const CARD_PROJECTION = { title: 1, slug: 1, brand: 1, categoryPath: 1, images: { $slice: 1 }, minPrice: 1, maxPrice: 1, totalStock: 1, isFeatured: 1, "variants.price": 1, "variants.compareAtPrice": 1, "variants.isActive": 1 } as const;
 
 const isDuplicateKey = (error: unknown): error is { keyPattern?: Record<string, unknown> } => typeof error === "object" && error !== null && "code" in error && error.code === 11000;
 
@@ -144,17 +156,26 @@ export interface ProductServiceDeps {
   categories: CategoryService;
   uploads: UploadService;
   audit: AuditRecorder;
+  // Absent in scripts that only write the catalogue: prices are then shown without sales.
+  sales?: SaleService;
 }
 
 export class ProductService {
   private readonly categories: CategoryService;
   private readonly uploads: UploadService;
   private readonly audit: AuditRecorder;
+  private readonly sales: SaleService | undefined;
 
   constructor(deps: ProductServiceDeps) {
     this.categories = deps.categories;
     this.uploads = deps.uploads;
     this.audit = deps.audit;
+    this.sales = deps.sales;
+  }
+
+  // Live sale prices for this moment; the cart and checkout price with the same function as the catalogue.
+  async pricer(): Promise<Pricer> {
+    return this.sales ? this.sales.pricer() : NO_SALES;
   }
 
   // ---- Storefront ----
@@ -164,11 +185,16 @@ export class ProductService {
     const sort: Record<string, 1 | -1 | { $meta: "textScore" }> =
       query.sort === "price_asc" ? { minPrice: 1, _id: 1 } : query.sort === "price_desc" ? { maxPrice: -1, _id: -1 } : query.sort === "relevance" && query.q ? { score: { $meta: "textScore" }, _id: -1 } : { createdAt: -1, _id: -1 };
     const projection = query.q ? { ...CARD_PROJECTION, score: { $meta: "textScore" } } : CARD_PROJECTION;
-    const [docs, total] = await Promise.all([
+    const [docs, total, pricer] = await Promise.all([
       Product.find(filter, projection).sort(sort).skip(skipOf(query)).limit(query.limit).lean<ProductDoc[]>(),
       Product.countDocuments(filter),
+      this.pricer(),
     ]);
-    return toPage(docs.map(toProductCard), total, query);
+    return toPage(
+      docs.map((doc) => toProductCard(doc, pricer)),
+      total,
+      query,
+    );
   }
 
   // Counts per filter value. Each selected filter's own counts ignore that filter, so picking "Red" still shows how many
@@ -230,7 +256,8 @@ export class ProductService {
     if (!doc) throw notFound();
     const category = await this.categories.getById(doc.category.toString()).catch(() => null);
     if (!category) throw notFound();
-    const card = toProductCard(doc);
+    const pricer = await this.pricer();
+    const card = toProductCard(doc, pricer);
     return {
       ...card,
       description: doc.description,
@@ -238,7 +265,7 @@ export class ProductService {
       breadcrumbs: category.breadcrumbs,
       attributes: doc.attributes,
       attributeDefs: category.effectiveAttributes,
-      variants: activeVariants(doc).map(toPublicVariant),
+      variants: activeVariants(doc).map((variant) => toPublicVariant(variant, pricer(doc, variant.price))),
       images: doc.images.map((image) => ({ key: image.key, url: image.url, alt: image.alt })),
       tags: doc.tags,
     };
@@ -377,7 +404,7 @@ export class ProductService {
 
   // ---- Internals ----
 
-  private async publicFilter(query: Pick<ProductListQuery, "q" | "category" | "minPrice" | "maxPrice" | "inStock" | "featured" | "facets">): Promise<Record<string, unknown>> {
+  private async publicFilter(query: Pick<ProductListQuery, "q" | "category" | "minPrice" | "maxPrice" | "inStock" | "featured" | "facets" | "sale" | "onSale">): Promise<Record<string, unknown>> {
     const filter: Record<string, unknown> = { status: "active" };
     if (query.category) {
       const category = await this.categories.getActiveBySlug(query.category);
@@ -389,7 +416,10 @@ export class ProductService {
     }
     if (query.inStock) filter.totalStock = trusted({ $gt: 0 });
     if (query.featured) filter.isFeatured = true;
-    if (query.facets.size) filter.$and = [...query.facets].map(([key, values]) => ({ facets: trusted({ $in: values.map((value) => `${key}:${value}`) }) }));
+    const and: Record<string, unknown>[] = [...query.facets].map(([key, values]) => ({ facets: trusted({ $in: values.map((value) => `${key}:${value}`) }) }));
+    // Sale filters use the live sales; without a sale service nothing is on sale.
+    if (query.sale || query.onSale) and.push(this.sales ? await this.sales.listingFilter(query.sale) : { _id: trusted({ $in: [] }) });
+    if (and.length) filter.$and = and;
     return filter;
   }
 

@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="en" className={`${body.variable} ${heading.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      <body className="vk-store flex min-h-full flex-col">
         {children}
         <MotionEffects />
         <DialogHost />

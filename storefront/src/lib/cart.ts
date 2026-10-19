@@ -62,7 +62,7 @@ function writeGuest(lines: GuestLine[]): void {
 }
 
 const guestCart = (lines: GuestLine[]): Cart => ({
-  lines: lines.map<CartLine>((line) => ({ ...line, compareAtPrice: null, lineTotal: line.unitPrice * line.quantity, available: MAX_LINE_QUANTITY, status: "ok" })),
+  lines: lines.map<CartLine>((line) => ({ ...line, compareAtPrice: null, sale: null, lineTotal: line.unitPrice * line.quantity, available: MAX_LINE_QUANTITY, status: "ok" })),
   itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
   subtotal: lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
   hasIssues: false,

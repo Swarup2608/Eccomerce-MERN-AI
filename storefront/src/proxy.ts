@@ -11,7 +11,11 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
-    `img-src 'self' blob: data:${env.imageOrigin ? ` ${env.imageOrigin}` : ""} https://cdn.razorpay.com`,
+    // The Vektor UI sets layout through style attributes. Attributes can't carry a nonce, so allow them on their own;
+    // <style> elements still need the nonce. React escapes attribute values, so this doesn't open script injection.
+    "style-src-attr 'unsafe-inline'",
+    // Editorial photography on the home page, mega menu and sign-in panel.
+    `img-src 'self' blob: data:${env.imageOrigin ? ` ${env.imageOrigin}` : ""} https://images.unsplash.com https://cdn.razorpay.com`,
     "font-src 'self'",
     // Razorpay Checkout (loaded on demand at checkout; 'strict-dynamic' lets our nonce'd bundle add its script) talks to
     // these hosts and shows the payment form in a frame. Stripe Checkout is a full-page redirect and needs nothing here.

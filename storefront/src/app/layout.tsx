@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Inter_Tight } from "next/font/google";
 import { connection } from "next/server";
+import { DialogHost } from "@/components/dialog";
+import { MotionEffects } from "@/components/motion-effects";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const body = Inter({ variable: "--ff-body", subsets: ["latin"] });
+const heading = Inter_Tight({ variable: "--ff-heading", subsets: ["latin"], weight: ["500", "600", "700"] });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Storefront", template: "%s | Storefront" },
-  description: "Shop the latest products.",
+  title: { default: "Vektor", template: "%s | Vektor" },
+  description: "Objects from independent makers, shipped together.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -23,8 +23,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="en" className={`${body.variable} ${heading.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="vk-store flex min-h-full flex-col">
+        {children}
+        <MotionEffects />
+        <DialogHost />
+      </body>
     </html>
   );
 }

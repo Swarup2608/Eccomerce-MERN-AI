@@ -37,6 +37,30 @@ export interface ProductImage {
   alt: string;
 }
 
+// The live sale behind a discounted price.
+export interface SaleBadge {
+  id: string;
+  name: string;
+  slug: string;
+  label: string;
+  endsAt: string;
+}
+
+export interface PublicSale {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  label: string;
+  discountType: "percent" | "fixed";
+  discountValue: number;
+  appliesTo: "all" | "categories" | "products";
+  categories: { name: string; slug: string }[];
+  startsAt: string;
+  endsAt: string;
+  status: "live" | "scheduled" | "ended" | "disabled";
+}
+
 export interface ProductCardData {
   id: string;
   title: string;
@@ -48,6 +72,7 @@ export interface ProductCardData {
   compareAtPrice: number | null;
   inStock: boolean;
   isFeatured: boolean;
+  sale: SaleBadge | null;
 }
 
 export interface PublicVariant {
@@ -90,7 +115,7 @@ async function get<T>(path: `/${string}`): Promise<T | null> {
 }
 
 // Only the params the API understands are forwarded, so a stray query string never turns into a 400.
-const LIST_PARAMS = new Set(["q", "category", "brand", "minPrice", "maxPrice", "inStock", "featured", "sort", "page", "limit"]);
+const LIST_PARAMS = new Set(["q", "category", "brand", "minPrice", "maxPrice", "inStock", "featured", "sale", "onSale", "sort", "page", "limit"]);
 
 export function listQuery(params: Record<string, string | string[] | undefined>): string {
   const search = new URLSearchParams();
@@ -123,6 +148,16 @@ export async function listProducts(query: string): Promise<Page<ProductCardData>
     throw error;
   }
 }
+
+export async function getSales(): Promise<{ live: PublicSale[]; upcoming: PublicSale[] }> {
+  try {
+    return (await get<{ live: PublicSale[]; upcoming: PublicSale[] }>("/api/v1/sales")) ?? { live: [], upcoming: [] };
+  } catch {
+    return { live: [], upcoming: [] };
+  }
+}
+
+export const getSale = async (slug: string): Promise<PublicSale | null> => (await get<{ sale: PublicSale }>(`/api/v1/sales/${encodeURIComponent(slug)}`).catch(() => null))?.sale ?? null;
 
 export async function getFacets(query: string): Promise<Facets> {
   try {

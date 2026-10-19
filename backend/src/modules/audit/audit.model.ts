@@ -5,6 +5,7 @@ export const AUDIT_EVENTS = [
   "refresh_reuse", "logout", "logout_all", "password_changed", "password_reset_requested", "password_reset_completed", "user_status_changed", "admin_ip_blocked",
   "account_blocked", "account_unblocked",
   "category_created", "category_updated", "category_deleted", "product_created", "product_updated", "product_deleted", "product_stock_changed",
+  "sale_created", "sale_updated", "sale_deleted",
   "order_placed", "order_status_changed", "order_cancelled", "order_refunded", "payment_confirmed", "payment_failed", "payment_amount_mismatch", "webhook_signature_invalid",
 ] as const;
 

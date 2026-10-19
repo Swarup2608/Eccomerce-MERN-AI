@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Inter_Tight } from "next/font/google";
 import { connection } from "next/server";
+import { DialogHost } from "@/components/dialog";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const body = Inter({ variable: "--ff-body", subsets: ["latin"] });
+const heading = Inter_Tight({ variable: "--ff-heading", subsets: ["latin"], weight: ["500", "600", "700"] });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -14,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Admin", template: "%s | Admin" },
+  title: { default: "Vektor Console", template: "%s | Vektor Console" },
   description: "Store administration.",
   robots: { index: false, follow: false, nocache: true },
 };
@@ -24,8 +23,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="en" className={`${body.variable} ${heading.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <DialogHost />
+      </body>
     </html>
   );
 }

@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
+/* Vektor design tokens: Modernist (Swiss) theme with the Signature palette, ported from "Vektor Store v2". */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --vk-bg: #faf9f7;
+  --vk-surface: #f0ede8;
+  --vk-text: #161514;
+  --vk-divider: color-mix(in srgb, #161514 12%, transparent);
+  --vk-accent-100: #fdede7;
+  --vk-accent-200: #fad3c4;
+  --vk-accent-400: #ec825f;
+  --vk-accent: #e2552d;
+  --vk-accent-600: #c8441f;
+  --vk-accent-700: #a23518;
+  --vk-on-accent: #ffffff;
+  --box-r: 0px;
+  --pill: 0px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --shadow-md: 0 8px 24px -8px rgb(22 21 20 / 0.18);
+  --shadow-lg: 0 18px 44px -12px rgb(22 21 20 / 0.28);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--vk-bg);
+  --color-foreground: var(--vk-text);
+  --color-surface: var(--vk-surface);
+  --color-divider: var(--vk-divider);
+  --color-accent: var(--vk-accent);
+  --color-accent-200: var(--vk-accent-200);
+  --color-accent-600: var(--vk-accent-600);
+  --color-accent-700: var(--vk-accent-700);
+  --color-on-accent: var(--vk-on-accent);
+  --font-sans: var(--ff-body), system-ui, sans-serif;
+  --font-heading: var(--ff-heading), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* The design is light-only; `dark:` utilities opt in via data-theme="dark" rather than the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--vk-bg);
+  color: var(--vk-text);
+  font-family: var(--font-sans);
 }
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--vk-accent-200);
+  color: var(--vk-text);
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--vk-accent);
+  outline-offset: 3px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--vk-text) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vk-accent) 28%, transparent) !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--vk-text);
+}
+
+/* Sharp-cornered, Swiss feel: flatten the rounded utilities the older pages still use. */
+.rounded-md,
+.rounded-lg,
+.rounded {
+  border-radius: var(--box-r);
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Confirm / prompt dialogs (components/dialog.tsx). */
+.vk-dialog[open]{animation:vk-dialog-in .22s cubic-bezier(.2,.7,.2,1)}
+.vk-dialog::backdrop{background:rgb(22 21 20 / .45);backdrop-filter:blur(2px);animation:vk-fade .22s ease}
+@keyframes vk-dialog-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes vk-fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.vk-dialog[open],.vk-dialog::backdrop{animation:none}}

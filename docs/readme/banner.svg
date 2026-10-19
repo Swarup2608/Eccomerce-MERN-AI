@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="Full-Stack E-Commerce Platform: Next.js storefront and admin on an Express API with MongoDB, Redis, Razorpay and Stripe">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#161c3d"/>
+    </linearGradient>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="700" y2="0" spreadMethod="reflect">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="0.5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#34d399"/>
+      <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="1400 0" dur="8s" repeatCount="indefinite"/>
+    </linearGradient>
+    <radialGradient id="orbA"><stop offset="0" stop-color="#7c5cff" stop-opacity=".55"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="orbB"><stop offset="0" stop-color="#22d3ee" stop-opacity=".40"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".04"/>
+    </pattern>
+    <clipPath id="card"><rect width="1200" height="320" rx="24"/></clipPath>
+  </defs>
+  <style>
+    .orb { animation: drift 14s ease-in-out infinite alternate; }
+    .orb.b { animation-duration: 18s; animation-delay: -6s; }
+    @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(90px, -40px); } }
+
+    .kicker { font: 600 15px "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: 4px; fill: #94a3b8; }
+    .title { font: 800 54px "Segoe UI", Helvetica, Arial, sans-serif; fill: url(#ink); }
+    .sub { font: 500 23px "Segoe UI", Helvetica, Arial, sans-serif; fill: #e2e8f0; opacity: 0; animation: cycle 12s infinite; }
+    .s2 { animation-delay: 3s; } .s3 { animation-delay: 6s; } .s4 { animation-delay: 9s; }
+    @keyframes cycle {
+      0% { opacity: 0; transform: translateY(12px); }
+      4%, 21% { opacity: 1; transform: translateY(0); }
+      25%, 100% { opacity: 0; transform: translateY(-12px); }
+    }
+    .caret { fill: #22d3ee; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .bag { fill: none; stroke: url(#ink); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+           stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw 6s ease-in-out infinite; }
+    @keyframes draw { 0% { stroke-dashoffset: 520; } 40%, 80% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -520; } }
+    .coin { animation: bob 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    .coin.c2 { animation-delay: -1s; } .coin.c3 { animation-delay: -2s; }
+    @keyframes bob { 50% { transform: translateY(-14px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+      .sub.s1 { opacity: 1; }
+      .bag { stroke-dashoffset: 0; }
+    }
+  </style>
+
+  <g clip-path="url(#card)">
+    <rect width="1200" height="320" fill="url(#bg)"/>
+    <rect width="1200" height="320" fill="url(#grid)"/>
+    <circle class="orb" cx="180" cy="300" r="260" fill="url(#orbA)"/>
+    <circle class="orb b" cx="1020" cy="40" r="240" fill="url(#orbB)"/>
+  </g>
+
+  <text class="kicker" x="72" y="92">TYPESCRIPT MONOREPO · STOREFRONT · ADMIN · REST API</text>
+  <text class="title" x="70" y="160">Full-Stack E-Commerce Platform</text>
+
+  <g transform="translate(72 222)">
+    <text class="sub s1">Next.js 16 storefront and admin console on an Express 5 API</text>
+    <text class="sub s2">Razorpay · Stripe · Cash on Delivery, with signed webhooks</text>
+    <text class="sub s3">Rotating refresh tokens, atomic in Redis with Lua</text>
+    <text class="sub s4">127 integration tests against real MongoDB and Redis</text>
+  </g>
+  <rect class="caret" x="72" y="244" width="46" height="4" rx="2"/>
+
+  <!-- shopping bag drawing itself -->
+  <g transform="translate(980 110)">
+    <path class="bag" d="M10 50 H150 L136 170 H24 Z M48 50 V34 a32 32 0 0 1 64 0 V50"/>
+    <circle class="coin" cx="40" cy="-10" r="9" fill="#fbbf24"/>
+    <circle class="coin c2" cx="80" cy="-24" r="7" fill="#34d399"/>
+    <circle class="coin c3" cx="120" cy="-8" r="8" fill="#a78bfa"/>
+  </g>
+</svg>

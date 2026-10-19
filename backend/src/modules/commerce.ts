@@ -17,6 +17,9 @@ import { Cart } from "./cart/cart.model.js";
 import { CartService } from "./cart/cart.service.js";
 import { WishlistItem, WishlistService } from "./wishlist/wishlist.service.js";
 import { UploadService } from "./uploads/upload.service.js";
+import { Sale } from "./sales/sale.model.js";
+import { SaleService } from "./sales/sale.service.js";
+import { WishlistList } from "./wishlist/wishlist.service.js";
 
 export interface CommerceDeps {
   logger: Logger;
@@ -33,6 +36,7 @@ export interface CommerceServices {
   uploads: UploadService;
   categories: CategoryService;
   products: ProductService;
+  sales: SaleService;
   cart: CartService;
   wishlist: WishlistService;
   addresses: AddressService;
@@ -46,12 +50,13 @@ export interface CommerceServices {
 export function createCommerce({ logger, audit, storage, mailer, storefrontUrl, payments }: CommerceDeps): CommerceServices {
   const uploads = new UploadService(storage, logger.child({ component: "uploads" }));
   const categories = new CategoryService(audit);
-  const products = new ProductService({ categories, uploads, audit });
+  const sales = new SaleService(audit);
+  const products = new ProductService({ categories, uploads, audit, sales });
   const cart = new CartService(products);
   const addresses = new AddressService();
   const orders = new OrderService({ cart, addresses, gateways: payments, mailer, audit, logger: logger.child({ component: "orders" }), storefrontUrl });
-  return { uploads, categories, products, cart, wishlist: new WishlistService(products), addresses, orders, payments, productHasOrders: (productId) => orders.productHasOrders(productId) };
+  return { uploads, categories, products, sales, cart, wishlist: new WishlistService(products), addresses, orders, payments, productHasOrders: (productId) => orders.productHasOrders(productId) };
 }
 
 // Unique indexes (slugs, SKUs, one cart per user...) are correctness guarantees, so they are built even when autoIndex is off.
-export const COMMERCE_MODELS = [Upload, Category, Product, Cart, WishlistItem, Address, Order, WebhookEvent] as const;
+export const COMMERCE_MODELS = [Upload, Category, Product, Sale, Cart, WishlistItem, WishlistList, Address, Order, WebhookEvent] as const;

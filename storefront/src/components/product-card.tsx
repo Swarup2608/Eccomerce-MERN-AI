@@ -1,43 +1,58 @@
 import Link from "next/link";
 import type { ProductCardData } from "@/lib/catalog";
 import { formatInr } from "@/lib/money";
-import { ProductPhoto } from "@/components/ui";
+import { WishHeart } from "@/components/wish-heart";
 
-export function Price({ min, max, compareAt }: { min: number; max?: number; compareAt?: number | null }) {
-  return (
-    <span className="flex flex-wrap items-baseline gap-x-2">
-      <span className="font-semibold tabular-nums">{max && max !== min ? `From ${formatInr(min)}` : formatInr(min)}</span>
-      {compareAt && compareAt > min ? (
-        <>
-          <span className="text-sm text-black/40 line-through tabular-nums dark:text-white/40">{formatInr(compareAt)}</span>
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">{Math.round((1 - min / compareAt) * 100)}% off</span>
-        </>
-      ) : null}
-    </span>
-  );
-}
+const muted = (pct: number) => `color-mix(in srgb,var(--color-text) ${pct}%,transparent)`;
 
+// Product card: rounded 4:5 image that lifts on hover, name and price in a pill over the photo, and a round "+"
+// that turns. Listing data has no SKU, so "+" opens the product to pick options rather than adding blindly.
 export function ProductCard({ product }: { product: ProductCardData }) {
+  const discount = product.compareAtPrice && product.compareAtPrice > product.minPrice ? Math.round((1 - product.minPrice / product.compareAtPrice) * 100) : 0;
+  const href = `/products/${product.slug}`;
+  const price = product.maxPrice !== product.minPrice ? `From ${formatInr(product.minPrice)}` : formatInr(product.minPrice);
   return (
-    <Link href={`/products/${product.slug}`} className="group flex flex-col gap-2">
-      <div className="relative overflow-hidden rounded-lg">
-        <ProductPhoto src={product.image?.url} alt={product.image?.alt || product.title} className="aspect-[4/5] w-full transition duration-300 group-hover:scale-[1.03]" />
-        {!product.inStock ? <span className="absolute left-2 top-2 rounded bg-background/90 px-2 py-0.5 text-xs font-medium">Sold out</span> : null}
-      </div>
-      <div>
-        {product.brand ? <p className="text-xs uppercase tracking-wide text-black/50 dark:text-white/50">{product.brand}</p> : null}
-        <p className="line-clamp-2 text-sm font-medium group-hover:underline">{product.title}</p>
-        <div className="mt-1 text-sm">
-          <Price min={product.minPrice} max={product.maxPrice} compareAt={product.compareAtPrice} />
+    <article className="vk3-card" style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0, height: "100%" }}>
+      <div className="vk3-media" style={{ position: "relative", aspectRatio: "4/5", overflow: "hidden", borderRadius: "var(--box-r,0px)", background: "var(--color-surface)" }}>
+        <Link href={href} aria-label={product.title} style={{ position: "absolute", inset: 0, display: "block" }}>
+          {product.image?.url ? (
+            <span role="img" aria-label={product.image.alt || product.title} className="vk3-img" style={{ position: "absolute", inset: 0, display: "block", background: `var(--color-surface) url(${product.image.url}) center/cover no-repeat` }} />
+          ) : (
+            <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 12, color: muted(40) }}>No image</span>
+          )}
+        </Link>
+        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }}>
+          {discount > 0 ? <span className="tag tag-accent">{product.sale ? product.sale.label : `−${discount}%`}</span> : null}
+          {product.isFeatured ? <span className="tag tag-neutral">Featured</span> : null}
+          {!product.inStock ? <span className="tag tag-neutral">Sold out</span> : null}
+        </div>
+        <WishHeart productId={product.id} />
+        <div style={{ position: "absolute", left: 10, right: 10, bottom: 10, display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1, padding: "9px 16px", background: "var(--color-bg)", borderRadius: "var(--pill,0px)" }}>
+            <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.title}</span>
+            <span style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+              <b style={{ fontWeight: 600 }}>{price}</b>
+              {discount > 0 && product.compareAtPrice ? <span style={{ textDecoration: "line-through", color: muted(50) }}>{formatInr(product.compareAtPrice)}</span> : null}
+            </span>
+          </div>
+          <Link href={href} aria-label={`Choose options for ${product.title}`} className="vk3-plus" style={{ pointerEvents: "auto", width: 46, height: 46, flex: "none", display: "grid", placeItems: "center", borderRadius: 999, background: "var(--color-text)", color: "var(--color-bg)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </Link>
         </div>
       </div>
-    </Link>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "0 4px", fontSize: 12, color: muted(62) }}>
+        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.brand}</span>
+        <span style={{ flex: "none" }}>{product.inStock ? "In stock" : "Out of stock"}</span>
+      </div>
+    </article>
   );
 }
 
-export function ProductGrid({ products }: { products: ProductCardData[] }) {
+export function ProductGrid({ products, min = 240 }: { products: ProductCardData[]; min?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${min}px,1fr))`, gap: "36px 16px" }}>
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

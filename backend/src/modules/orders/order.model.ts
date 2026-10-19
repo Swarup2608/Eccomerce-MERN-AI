@@ -19,7 +19,12 @@ export interface IOrderItem {
   brand: string;
   options: Record<string, string>;
   image: string | null;
+  // What was charged per unit, after any sale.
   unitPrice: number;
+  // The price before the sale; equal to unitPrice when none applied. Missing on orders placed before sales existed.
+  listPrice?: number;
+  // Snapshot of the sale that priced this line, so reports survive the sale being edited or deleted.
+  sale?: { id: string; name: string; label: string } | null;
   quantity: number;
   lineTotal: number;
 }
@@ -100,6 +105,8 @@ const itemSchema = new Schema<IOrderItem>(
     options: { type: Schema.Types.Mixed, default: {} },
     image: { type: String, default: null },
     unitPrice: { type: Number, required: true, min: 0 },
+    listPrice: { type: Number, min: 0 },
+    sale: { type: new Schema({ id: String, name: String, label: String }, { _id: false }), default: null },
     quantity: { type: Number, required: true, min: 1 },
     lineTotal: { type: Number, required: true, min: 0 },
   },
@@ -163,6 +170,7 @@ orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ "payment.status": 1, createdAt: -1 });
 orderSchema.index({ "customer.email": 1 });
 orderSchema.index({ "items.product": 1 });
+orderSchema.index({ "items.sale.id": 1 }, { partialFilterExpression: { "items.sale.id": { $type: "string" } } });
 orderSchema.index({ "payment.providerOrderId": 1 }, { partialFilterExpression: { "payment.providerOrderId": { $type: "string" } } });
 orderSchema.index({ expiresAt: 1 }, { partialFilterExpression: { status: "pending_payment" } });
 

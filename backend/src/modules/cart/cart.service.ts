@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
 import { HttpError } from "../../lib/http-error.js";
 import type { IProductImage, IVariant } from "../products/product.model.js";
-import { MAX_VISIBLE_STOCK, type ProductDoc, type ProductService } from "../products/product.service.js";
+import { MAX_VISIBLE_STOCK, wasPrice, type ProductDoc, type ProductService } from "../products/product.service.js";
+import type { SaleBadge, SalePrice } from "../sales/sale.service.js";
 import { Cart, MAX_CART_LINES, MAX_LINE_QUANTITY, type ICartItem } from "./cart.model.js";
 import type { AddCartItemInput } from "./cart.validation.js";
 
@@ -15,8 +16,10 @@ export interface CartLine {
   image: IProductImage | null;
   sku: string;
   options: Record<string, string>;
+  // After any live sale.
   unitPrice: number;
   compareAtPrice: number | null;
+  sale: SaleBadge | null;
   quantity: number;
   lineTotal: number;
   available: number;
@@ -37,6 +40,8 @@ export interface PricedLine {
   item: ICartItem;
   product: ProductDoc | undefined;
   variant: IVariant | undefined;
+  // The unit price right now (with any live sale); undefined when the product or variant is gone.
+  priced: SalePrice | undefined;
   status: CartLineStatus;
 }
 
@@ -57,12 +62,12 @@ export class CartService {
 
   // Resolves every line against the current product: price, availability and stock are never taken from the cart.
   async price(items: readonly ICartItem[]): Promise<PricedLine[]> {
-    const products = await this.products.cardsByIds([...new Set(items.map((item) => item.product.toString()))].map((id) => new Types.ObjectId(id)));
+    const [products, pricer] = await Promise.all([this.products.cardsByIds([...new Set(items.map((item) => item.product.toString()))].map((id) => new Types.ObjectId(id))), this.products.pricer()]);
     return items.map((item) => {
       const product = products.get(item.product.toString());
       const variant = product?.variants.find((candidate) => candidate.sku === item.sku);
       const status: CartLineStatus = !product || product.status !== "active" || !variant || !variant.isActive ? "unavailable" : variant.stock < item.quantity ? "insufficient_stock" : "ok";
-      return { item, product, variant, status };
+      return { item, product, variant, priced: product && variant ? pricer(product, variant.price) : undefined, status };
     });
   }
 
@@ -141,7 +146,7 @@ export class CartService {
   private async view(items: readonly ICartItem[]): Promise<CartView> {
     if (items.length === 0) return EMPTY_CART;
     const priced = await this.price(items);
-    const lines: CartLine[] = priced.map(({ item, product, variant, status }) => ({
+    const lines: CartLine[] = priced.map(({ item, product, variant, priced: price, status }) => ({
       productId: item.product.toString(),
       slug: product?.slug ?? "",
       title: product?.title ?? "Unavailable product",
@@ -149,10 +154,11 @@ export class CartService {
       image: product?.images[0] ? { key: product.images[0].key, url: product.images[0].url, alt: product.images[0].alt } : null,
       sku: item.sku,
       options: variant?.options ?? {},
-      unitPrice: variant?.price ?? 0,
-      compareAtPrice: variant?.compareAtPrice ?? null,
+      unitPrice: price?.price ?? 0,
+      compareAtPrice: variant && price ? wasPrice(variant, price) : null,
+      sale: price?.sale ?? null,
       quantity: item.quantity,
-      lineTotal: (variant?.price ?? 0) * item.quantity,
+      lineTotal: (price?.price ?? 0) * item.quantity,
       available: status === "unavailable" ? 0 : Math.min(variant?.stock ?? 0, MAX_VISIBLE_STOCK),
       status,
     }));

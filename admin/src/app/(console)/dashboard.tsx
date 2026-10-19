@@ -46,12 +46,12 @@ export function Dashboard() {
               {stats.recent.map((order) => (
                 <tr key={order.id}>
                   <td className="px-3 py-2 font-mono text-xs">
-                    <Link href={`/orders/${order.id}`} className="hover:underline">
+                    <Link href={`/orders/${order.id}`} className="no-underline hover:text-accent-700">
                       {order.orderNumber}
                     </Link>
                   </td>
                   <td className="px-3 py-2">{order.customer.name}</td>
-                  <td className="px-3 py-2 text-black/60 dark:text-white/60">{formatDate(order.createdAt)}</td>
+                  <td className="px-3 py-2 text-foreground/60">{formatDate(order.createdAt)}</td>
                   <td className="px-3 py-2">
                     <StatusPill status={order.status} label={ORDER_STATUS_LABELS[order.status]} />
                   </td>
@@ -68,29 +68,38 @@ export function Dashboard() {
 
 function Tile({ label, value, detail, href }: { label: string; value: string; detail: string; href?: string }) {
   const body = (
-    <div className="rounded-lg border border-black/10 p-4 transition hover:border-black/20 dark:border-white/10 dark:hover:border-white/20">
-      <p className="text-xs font-medium uppercase tracking-wide text-black/50 dark:text-white/50">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="mt-1 text-xs text-black/50 dark:text-white/50">{detail}</p>
+    <div className="group h-full border border-divider bg-background p-5 transition hover:border-foreground">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/55">{label}</p>
+      <p className="mt-3 font-heading text-4xl font-semibold leading-none tracking-tight tabular-nums">{value}</p>
+      <p className="mt-2 flex items-center justify-between text-xs text-foreground/55">
+        {detail}
+        {href ? <span aria-hidden className="text-accent opacity-0 transition group-hover:opacity-100">→</span> : null}
+      </p>
     </div>
   );
-  return href ? <Link href={href}>{body}</Link> : body;
+  return href ? (
+    <Link href={href} className="no-underline hover:text-foreground">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
 }
 
 // Plain bars: one per day, height relative to the best day. The title on each bar carries the exact numbers.
 function RevenueChart({ daily }: { daily: Stats["last30Days"]["daily"] }) {
   const max = Math.max(1, ...daily.map((day) => day.revenue));
-  if (daily.every((day) => day.revenue === 0)) return <p className="py-6 text-center text-sm text-black/50 dark:text-white/50">No sales in the last 30 days yet.</p>;
+  if (daily.every((day) => day.revenue === 0)) return <p className="py-6 text-center text-sm text-foreground/55">No sales in the last 30 days yet.</p>;
   return (
     <div>
       <div className="flex h-40 items-end gap-1" role="img" aria-label="Daily revenue for the last 30 days">
         {daily.map((day) => (
           <div key={day.date} className="group relative flex h-full flex-1 items-end" title={`${day.date}: ${formatInr(day.revenue)} from ${day.orders} order${day.orders === 1 ? "" : "s"}`}>
-            <div className="w-full rounded-t bg-foreground/70 group-hover:bg-foreground" style={{ height: `${Math.max(day.revenue > 0 ? 2 : 0, (day.revenue / max) * 100)}%` }} />
+            <div className="w-full bg-accent/60 group-hover:bg-accent" style={{ height: `${Math.max(day.revenue > 0 ? 2 : 0, (day.revenue / max) * 100)}%` }} />
           </div>
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-black/50 dark:text-white/50">
+      <div className="mt-2 flex justify-between text-xs text-foreground/55">
         <span>{daily[0]?.date}</span>
         <span>{daily.at(-1)?.date}</span>
       </div>

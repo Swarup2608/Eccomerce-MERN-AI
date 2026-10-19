@@ -1,4 +1,6 @@
-import type { InputHTMLAttributes } from "react";
+"use client";
+
+import { useId, useState, type InputHTMLAttributes } from "react";
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -8,18 +10,66 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export function FormField({ label, name, hint, ...input }: FormFieldProps) {
   return (
-    <label className="flex flex-col gap-1.5 text-sm">
-      <span className="font-medium">{label}</span>
-      <input name={name} className="rounded-md border border-black/15 bg-transparent px-3 py-2 outline-none focus:border-black/40 focus:ring-2 focus:ring-black/10 dark:border-white/20 dark:focus:border-white/50 dark:focus:ring-white/10" {...input} />
-      {hint ? <span className="text-xs text-black/50 dark:text-white/50">{hint}</span> : null}
+    <label className="field">
+      <span className="text-[13px] font-medium">{label}</span>
+      <input name={name} className="input" {...input} />
+      {hint ? <span className="text-xs text-foreground/55">{hint}</span> : null}
     </label>
+  );
+}
+
+const STRENGTH = ["Too short", "Weak", "Fair", "Good", "Strong"];
+
+// Mirrors the API's password rule: 8+ characters with upper and lower case, a number and a special character.
+function strength(value: string): number {
+  if (value.length < 8) return 0;
+  return 1 + Number(/[a-z]/.test(value) && /[A-Z]/.test(value)) + Number(/\d/.test(value)) + Number(/[^A-Za-z0-9]/.test(value));
+}
+
+// Password input with a Show/Hide toggle and, optionally, the design's four-bar strength meter.
+export function PasswordField({ label, name, hint, meter = false, ...input }: FormFieldProps & { meter?: boolean }) {
+  const id = useId();
+  const [visible, setVisible] = useState(false);
+  const [value, setValue] = useState("");
+  const score = strength(value);
+  return (
+    <div className="field">
+      <label htmlFor={id} className="text-[13px] font-medium">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          name={name}
+          type={visible ? "text" : "password"}
+          className="input pr-16"
+          {...input}
+          onChange={(event) => {
+            setValue(event.target.value);
+            input.onChange?.(event);
+          }}
+        />
+        <button type="button" onClick={() => setVisible(!visible)} aria-pressed={visible} aria-label={visible ? "Hide password" : "Show password"} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-xs text-accent-700">
+          {visible ? "Hide" : "Show"}
+        </button>
+      </div>
+      {meter ? (
+        <div className="mt-2 flex items-center gap-1.5" aria-live="polite">
+          {[1, 2, 3, 4].map((bar) => (
+            <span key={bar} className={`h-[3px] flex-1 transition-colors duration-300 ${value && score >= bar ? (score >= 3 ? "bg-foreground" : "bg-accent") : "bg-divider"}`} />
+          ))}
+          <span className="min-w-[76px] text-right text-xs text-foreground/60">{value ? STRENGTH[score] : ""}</span>
+        </div>
+      ) : null}
+      {hint ? <span className="text-xs text-foreground/55">{hint}</span> : null}
+    </div>
   );
 }
 
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+    <p role="alert" className="border-l-2 border-accent pl-2.5 text-[13px] text-accent-700">
       {message}
     </p>
   );
@@ -27,8 +77,9 @@ export function FormError({ message }: { message: string | null }) {
 
 export function SubmitButton({ pending, children }: { pending: boolean; children: string }) {
   return (
-    <button type="submit" disabled={pending} className="rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background disabled:opacity-60">
-      {pending ? "Please wait..." : children}
+    <button type="submit" disabled={pending} className="btn btn-primary min-h-12 justify-between text-[15px]">
+      <span>{pending ? "Please wait..." : children}</span>
+      <span aria-hidden>→</span>
     </button>
   );
 }

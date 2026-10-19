@@ -28,6 +28,7 @@ import { categoryRoutes } from "./modules/categories/category.routes.js";
 import type { CommerceServices } from "./modules/commerce.js";
 import { createProductController } from "./modules/products/product.controller.js";
 import { productRoutes } from "./modules/products/product.routes.js";
+import { saleRoutes } from "./modules/sales/sale.routes.js";
 import { healthRouter } from "./routes/health.js";
 import type { HealthCheck } from "./routes/health.js";
 
@@ -86,6 +87,7 @@ export function createApp({ config, logger, rateLimitStore, healthChecks, authSe
 
   app.use("/api/v1/categories", publicCache(CATALOG_CACHE_SEC), categoryRoutes(createCategoryController(commerce.categories)));
   app.use("/api/v1/products", publicCache(CATALOG_CACHE_SEC), productRoutes(createProductController(commerce.products, commerce.productHasOrders)));
+  app.use("/api/v1/sales", publicCache(CATALOG_CACHE_SEC), saleRoutes(commerce.sales));
 
   // Customer account features: a storefront session with the customer role.
   const customer = [authenticate("user", authService), requireRole(USER_ROLES.USER)];

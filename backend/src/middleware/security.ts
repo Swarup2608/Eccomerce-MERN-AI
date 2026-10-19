@@ -1,7 +1,10 @@
 import cors from "cors";
-import helmet from "helmet";
+import * as helmetModule from "helmet";
 import type { RequestHandler } from "express";
 import { HttpError } from "../lib/http-error.js";
+
+// Namespace import + .default is callable under both ESM and CommonJS type resolution (Vercel's builder uses the latter).
+const helmet = helmetModule.default;
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 

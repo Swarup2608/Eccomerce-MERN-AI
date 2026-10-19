@@ -148,7 +148,7 @@ export async function startApp(redis: Redis, options: { adminAllowedIps?: string
   const mailer = new MemoryMailer();
   const audit = new MemoryAudit();
   const logger = createLogger("error");
-  const service = new AuthService({ redis, policies: scopePolicies(false), secrets: SECRETS, storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, logger, mailer, audit });
+  const service = new AuthService({ redis, policies: scopePolicies(false, "test"), secrets: SECRETS, storefrontUrl: ORIGIN, adminUrl: ADMIN_ORIGIN, logger, mailer, audit });
   const storage = new MemoryStorage();
   const payments = fakePayments(ORIGIN);
   const commerce = createCommerce({ logger, audit, storage, mailer, storefrontUrl: ORIGIN, payments: { razorpay: payments.razorpay, stripe: payments.stripe } });

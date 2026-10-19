@@ -22,7 +22,7 @@ let redisUp = true;
 const redis = new Redis({ lazyConnect: true, enableOfflineQueue: false });
 
 before(async () => {
-  const policies = scopePolicies(false);
+  const policies = scopePolicies(false, "test");
   const app = createApp({
     config: { storefrontUrl: ALLOWED_ORIGIN, adminUrl: "http://localhost:3001", trustProxy: 0, rateLimit: { windowMs: 60_000, max: RATE_LIMIT_MAX }, auth: { accessTokenSecret: SECRETS.user, adminAccessTokenSecret: SECRETS.admin, secureCookies: false }, adminAllowedIps: [] },
     logger: createLogger("error"),
@@ -143,13 +143,13 @@ describe("auth guards", () => {
 
   it("rejects a user token presented as an admin token", async () => {
     const token = signAccessToken({ userId: "u1", role: "user", sessionId: "s1", scope: "user" }, SECRETS.user, 60);
-    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `adm_access=${token}` } });
+    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `admin-ecommerce-access-token=${token}` } });
     assert.equal(res.status, 401);
   });
 
   it("rejects a forged admin token signed with the wrong secret", async () => {
     const token = signAccessToken({ userId: "u1", role: "admin", sessionId: "s1", scope: "admin" }, SECRETS.user, 60);
-    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `adm_access=${token}` } });
+    const res = await fetch(`${baseUrl}/api/v1/admin/auth/me`, { headers: { cookie: `admin-ecommerce-access-token=${token}` } });
     assert.equal(res.status, 401);
   });
 

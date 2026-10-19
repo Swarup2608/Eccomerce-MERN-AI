@@ -291,32 +291,32 @@ suite("customer sign-in, lockout and sessions", () => {
   it("rotates refresh tokens and survives a replay inside the grace window", async () => {
     const { client, email } = await registerAndVerify();
     await client.post("/api/v1/auth/login", { identifier: email, password: PASSWORD });
-    const original = client.cookie("sf_refresh");
+    const original = client.cookie("ecommerce-user-refresh-token");
     assert.ok(original);
 
     const first = await client.post("/api/v1/auth/refresh");
     assert.equal(first.status, 200);
-    const rotated = client.cookie("sf_refresh");
+    const rotated = client.cookie("ecommerce-user-refresh-token");
     assert.notEqual(rotated, original);
 
     // A second tab (or a retry after a lost response) still holding the old token gets the same new one, not a logout.
     const second = new Client(app.baseUrl);
-    second.setCookie("sf_refresh", original, "/api/v1/auth");
+    second.setCookie("ecommerce-user-refresh-token", original, "/api/v1/auth");
     assert.equal((await second.post("/api/v1/auth/refresh")).status, 200);
-    assert.equal(second.cookie("sf_refresh"), rotated);
+    assert.equal(second.cookie("ecommerce-user-refresh-token"), rotated);
     assert.equal((await client.post("/api/v1/auth/refresh")).status, 200, "the session is still alive");
   });
 
   it("revokes the session when an old token is replayed after the grace window", async () => {
     const { client, email } = await registerAndVerify();
     await client.post("/api/v1/auth/login", { identifier: email, password: PASSWORD });
-    const stolen = client.cookie("sf_refresh");
+    const stolen = client.cookie("ecommerce-user-refresh-token");
     assert.ok(stolen);
     await client.post("/api/v1/auth/refresh");
     await infra.redis.del(`ecommerce:session:grace:${(jwt.decode(stolen) as { sid: string }).sid}`);
 
     const thief = new Client(app.baseUrl);
-    thief.setCookie("sf_refresh", stolen, "/api/v1/auth");
+    thief.setCookie("ecommerce-user-refresh-token", stolen, "/api/v1/auth");
     assert.equal((await thief.post("/api/v1/auth/refresh")).status, 401);
     assert.equal((await client.post("/api/v1/auth/refresh")).status, 401, "the real user's session was destroyed too");
     assert.ok(app.audit.count("refresh_reuse") >= 1);
@@ -325,16 +325,16 @@ suite("customer sign-in, lockout and sessions", () => {
   it("makes logout effective immediately, even for a still-valid access token", async () => {
     const { client, email } = await registerAndVerify();
     await client.post("/api/v1/auth/login", { identifier: email, password: PASSWORD });
-    const access = client.cookie("sf_access");
+    const access = client.cookie("ecommerce-user-access-token");
     assert.ok(access);
-    const refresh = client.cookie("sf_refresh");
+    const refresh = client.cookie("ecommerce-user-refresh-token");
     assert.ok(refresh);
     assert.equal((await client.post("/api/v1/auth/logout")).status, 204);
 
     const replay = new Client(app.baseUrl);
-    replay.setCookie("sf_access", access, "/api/v1");
+    replay.setCookie("ecommerce-user-access-token", access, "/api/v1");
     assert.equal((await replay.get("/api/v1/auth/me")).status, 401);
-    replay.setCookie("sf_refresh", refresh, "/api/v1/auth");
+    replay.setCookie("ecommerce-user-refresh-token", refresh, "/api/v1/auth");
     assert.equal((await replay.post("/api/v1/auth/refresh")).status, 401);
   });
 
@@ -619,9 +619,9 @@ suite("two-step sign-in settings, code resends and idle timeout", () => {
   it("ends a customer session after 24 hours without activity", async () => {
     const { client, email } = await registerAndVerify();
     await client.post("/api/v1/auth/login", { identifier: email, password: PASSWORD });
-    await ageSession(client, "sf_refresh", 23 * 3600_000);
+    await ageSession(client, "ecommerce-user-refresh-token", 23 * 3600_000);
     assert.equal((await client.post("/api/v1/auth/refresh")).status, 200, "23 hours idle is still fine");
-    await ageSession(client, "sf_refresh", 24 * 3600_000 + 60_000);
+    await ageSession(client, "ecommerce-user-refresh-token", 24 * 3600_000 + 60_000);
     assert.equal((await client.post("/api/v1/auth/refresh")).status, 401);
     assert.equal((await client.get("/api/v1/auth/me")).status, 401, "the session itself is gone");
   });
@@ -630,9 +630,9 @@ suite("two-step sign-in settings, code resends and idle timeout", () => {
     const { email } = await createAdmin();
     const c = new Client(app.baseUrl);
     await adminLogin(c, email);
-    await ageSession(c, "adm_refresh", 2 * 3600_000);
+    await ageSession(c, "admin-ecommerce-refresh-token", 2 * 3600_000);
     assert.equal((await c.post("/api/v1/admin/auth/refresh")).status, 200, "2 hours idle is still fine");
-    await ageSession(c, "adm_refresh", 3 * 3600_000 + 60_000);
+    await ageSession(c, "admin-ecommerce-refresh-token", 3 * 3600_000 + 60_000);
     assert.equal((await c.post("/api/v1/admin/auth/refresh")).status, 401);
   });
 });

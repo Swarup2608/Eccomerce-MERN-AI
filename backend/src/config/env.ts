@@ -38,6 +38,8 @@ const envSchema = z
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
     SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
     SMTP_USER: z.string().optional(),
+    // Alias for SMTP_USER (the mailbox that signs in to SMTP); SMTP_USER wins when both are set.
+    SMTP_EMAIL: z.string().trim().optional(),
     SMTP_PASS: z.string().optional(),
     EMAIL_FROM: z.string().trim().min(3).optional(),
     R2_ACCOUNT_ID: z.string().trim().regex(/^[a-f0-9]{32}$/, "must be the 32-character Cloudflare account id").optional(),
@@ -62,8 +64,8 @@ const envSchema = z
       if (env.TRUST_PROXY === undefined) ctx.addIssue({ code: "custom", path: ["TRUST_PROXY"], message: "must be set explicitly in production (number of proxy hops in front of the API)" });
       if (!env.SMTP_HOST || !env.EMAIL_FROM) ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "SMTP_HOST and EMAIL_FROM are required in production (verification, reset and admin sign-in emails)" });
     }
-    if (Boolean(env.SMTP_USER) !== Boolean(env.SMTP_PASS)) {
-      ctx.addIssue({ code: "custom", path: ["SMTP_USER"], message: "SMTP_USER and SMTP_PASS must be set together" });
+    if (Boolean(env.SMTP_USER || env.SMTP_EMAIL) !== Boolean(env.SMTP_PASS)) {
+      ctx.addIssue({ code: "custom", path: ["SMTP_USER"], message: "SMTP_USER (or SMTP_EMAIL) and SMTP_PASS must be set together" });
     }
     // Each integration is all-or-nothing: a half-configured one would fail at the worst moment (mid-upload or mid-checkout).
     for (const group of INTEGRATION_GROUPS) {
@@ -152,6 +154,7 @@ export function loadConfig(): AppConfig {
 
   const env = parsed.data;
   const isProduction = env.NODE_ENV === "production";
+  const smtpUser = env.SMTP_USER || env.SMTP_EMAIL || undefined;
 
   return Object.freeze({
     env: env.NODE_ENV,
@@ -169,7 +172,7 @@ export function loadConfig(): AppConfig {
     auth: Object.freeze({ accessTokenSecret: env.ACCESS_TOKEN_SECRET, adminAccessTokenSecret: env.ADMIN_ACCESS_TOKEN_SECRET, secureCookies: isProduction }),
     adminAllowedIps: Object.freeze(env.ADMIN_ALLOWED_IPS),
     apiPublicUrl: env.API_PUBLIC_URL,
-    mail: Object.freeze({ host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE, user: env.SMTP_USER || undefined, pass: env.SMTP_PASS || undefined, from: env.EMAIL_FROM ?? "Storefront <no-reply@localhost>" }),
+    mail: Object.freeze({ host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE, user: smtpUser, pass: env.SMTP_PASS || undefined, from: env.EMAIL_FROM ?? "Storefront <no-reply@localhost>" }),
     r2: env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL
       ? Object.freeze({ accountId: env.R2_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET, publicUrl: env.R2_PUBLIC_URL })
       : undefined,

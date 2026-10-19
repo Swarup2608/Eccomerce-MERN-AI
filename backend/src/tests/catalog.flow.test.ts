@@ -32,9 +32,9 @@ suite("admin access control", () => {
 
     // A customer session cookie is scoped to the storefront and signed with the other secret: it never passes as admin.
     const { client: customer } = await signedInCustomer(app);
-    const token = customer.cookie("sf_access");
+    const token = customer.cookie("ecommerce-user-access-token");
     assert.ok(token);
-    customer.setCookie("adm_access", token, "/api/v1/admin");
+    customer.setCookie("admin-ecommerce-access-token", token, "/api/v1/admin");
     assert.equal((await customer.get("/api/v1/admin/products")).status, 401);
     assert.equal((await customer.post("/api/v1/admin/uploads/images", { contentType: "image/png", size: 10 })).status, 401);
   });

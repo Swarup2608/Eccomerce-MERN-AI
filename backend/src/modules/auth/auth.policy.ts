@@ -1,6 +1,7 @@
 import { USER_ROLES, type UserRole } from "../users/user.validation.js";
 
 export type AuthScope = "user" | "admin";
+type NodeEnv = "development" | "test" | "production";
 
 export interface ScopePolicy {
   scope: AuthScope;
@@ -20,8 +21,12 @@ export interface ScopePolicy {
 export const MAX_SESSION_TTL_SEC = 30 * 24 * 60 * 60;
 
 // The __Secure- prefix makes browsers refuse the cookie unless it was set over HTTPS with the Secure flag.
-export function scopePolicies(secureCookies: boolean): Record<AuthScope, ScopePolicy> {
+// Names say which site set them: localhost when NODE_ENV=development, else ecommerce.mnsswarup.dev / admin.ecommerce.mnsswarup.dev.
+export function scopePolicies(secureCookies: boolean, env: NodeEnv): Record<AuthScope, ScopePolicy> {
   const prefix = secureCookies ? "__Secure-" : "";
+  const isLocal = env === "development";
+  const user = `${prefix}${isLocal ? "localhost-user" : "ecommerce-user"}`;
+  const admin = `${prefix}${isLocal ? "localhost-admin" : "admin-ecommerce"}`;
   return {
     user: {
       scope: "user",
@@ -29,8 +34,8 @@ export function scopePolicies(secureCookies: boolean): Record<AuthScope, ScopePo
       accessTtlSec: 15 * 60,
       sessionTtlSec: MAX_SESSION_TTL_SEC,
       idleTtlSec: 24 * 60 * 60,
-      accessCookie: `${prefix}sf_access`,
-      refreshCookie: `${prefix}sf_refresh`,
+      accessCookie: `${user}-access-token`,
+      refreshCookie: `${user}-refresh-token`,
       accessPath: "/api/v1",
       refreshPath: "/api/v1/auth",
     },
@@ -40,8 +45,8 @@ export function scopePolicies(secureCookies: boolean): Record<AuthScope, ScopePo
       accessTtlSec: 10 * 60,
       sessionTtlSec: 12 * 60 * 60,
       idleTtlSec: 3 * 60 * 60,
-      accessCookie: `${prefix}adm_access`,
-      refreshCookie: `${prefix}adm_refresh`,
+      accessCookie: `${admin}-access-token`,
+      refreshCookie: `${admin}-refresh-token`,
       accessPath: "/api/v1/admin",
       refreshPath: "/api/v1/admin/auth",
     },

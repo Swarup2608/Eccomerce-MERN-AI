@@ -64,6 +64,9 @@ export function HeaderBar({ categories }: { categories: CategoryNode[] }) {
           <Link href="/products?featured=true" onMouseEnter={() => setMenu(false)} className="vk-hide-sm" style={{ ...navLink, color: "var(--color-text)" }}>
             Featured<span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-accent)" }} />
           </Link>
+          <Link href="/stylist" onMouseEnter={() => setMenu(false)} className="vk-hide-sm" style={{ ...navLink, color: "var(--color-text)" }}>
+            Stylist
+          </Link>
           <Link href="/sales" onMouseEnter={() => setMenu(false)} style={{ ...navLink, color: "var(--color-accent-700)" }}>
             Sale
           </Link>

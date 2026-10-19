@@ -19,7 +19,7 @@ export function proxy(request: NextRequest) {
     "font-src 'self'",
     // Razorpay Checkout (loaded on demand at checkout; 'strict-dynamic' lets our nonce'd bundle add its script) talks to
     // these hosts and shows the payment form in a frame. Stripe Checkout is a full-page redirect and needs nothing here.
-    `connect-src 'self' ${env.apiUrl} https://api.razorpay.com https://lumberjack.razorpay.com`,
+    `connect-src 'self' ${env.apiUrl} ${env.stylistUrl} https://api.razorpay.com https://lumberjack.razorpay.com`,
     "frame-src https://api.razorpay.com https://checkout.razorpay.com",
     "object-src 'none'",
     "base-uri 'self'",

@@ -6,13 +6,15 @@
   "workspaces": [
     "backend",
     "storefront",
-    "admin"
+    "admin",
+    "stylist-node"
   ],
   "scripts": {
-    "dev": "concurrently -k -n BACKEND,STOREFRONT,ADMIN -c blue,green,magenta \"npm run dev -w backend\" \"npm run dev -w storefront\" \"npm run dev -w admin\"",
+    "dev": "concurrently -k -n BACKEND,STOREFRONT,ADMIN,STYLIST -c blue,green,magenta,yellow \"npm run dev -w backend\" \"npm run dev -w storefront\" \"npm run dev -w admin\" \"npm run dev -w stylist-node\"",
     "dev:backend": "npm run dev -w backend",
     "dev:storefront": "npm run dev -w storefront",
     "dev:admin": "npm run dev -w admin",
+    "dev:stylist": "npm run dev -w stylist-node",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces",
@@ -24,7 +26,9 @@
     "unblock:user": "npm run unblock:user -w backend",
     "seed:catalog": "npm run seed:catalog -w backend",
     "cleanup:uploads": "npm run cleanup:uploads -w backend",
-    "r2:cors": "npm run r2:cors -w backend"
+    "r2:cors": "npm run r2:cors -w backend",
+    "seed:stylist": "npm run seed:stylist -w stylist-node",
+    "reset:stylist": "npm run reset:stylist -w stylist-node"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

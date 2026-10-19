@@ -21,4 +21,13 @@ function readImageOrigin(): string | null {
   return new URL(raw).origin;
 }
 
-export const env = Object.freeze({ apiUrl: readApiUrl(), imageOrigin: readImageOrigin() });
+// Origin of the stylist service (wardrobe + outfit suggestions).
+function readStylistUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_STYLIST_URL ?? "http://localhost:4100";
+  if (!URL.canParse(raw)) throw new Error("NEXT_PUBLIC_STYLIST_URL is not a valid URL");
+  const url = new URL(raw);
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:" && !LOCAL_HOSTS.has(url.hostname)) throw new Error("NEXT_PUBLIC_STYLIST_URL must use https in production");
+  return url.origin;
+}
+
+export const env = Object.freeze({ apiUrl: readApiUrl(), imageOrigin: readImageOrigin(), stylistUrl: readStylistUrl() });

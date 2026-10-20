@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { FormError } from "@/components/form-field";
 import { Badge, Button, Card, Field, Input, Loading, Notice, PageHeader, Select, TextArea, Thumb } from "@/components/ui";
 import { adminApi, flattenTree, uploadImage, type AttributeDef, type AttributeValue, type CategoryDetail, type Product, type ProductInput, type ProductStatus, type Variant } from "@/lib/admin-api";
@@ -169,6 +169,7 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
   function onFiles(files: FileList | null) {
     if (!files?.length) return;
     setError(null);
+    if (images.length >= MAX_IMAGES) return setError(`A product can have at most ${MAX_IMAGES} images`);
     const list = [...files].slice(0, MAX_IMAGES - images.length);
     for (const file of list) {
       if (!ACCEPTED_IMAGES.split(",").includes(file.type)) return setError(`${file.name}: use a JPEG, PNG, WebP or AVIF image`);
@@ -209,13 +210,56 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
     return rows.map((row) => ({ key: row.key ?? keys.get(row.id) ?? "", alt: row.alt }));
   }
 
-  const moveImage = (index: number, by: number) =>
+  const moveImage = (from: number, to: number) =>
     setImages((current) => {
       const next = [...current];
-      const [item] = next.splice(index, 1);
-      if (item) next.splice(Math.max(0, Math.min(next.length, index + by)), 0, item);
+      const [item] = next.splice(from, 1);
+      if (item) next.splice(Math.max(0, Math.min(next.length, to)), 0, item);
       return next;
     });
+
+  // Drag and drop: files dragged in from the desktop are added like picked ones, and thumbnails dragged within the
+  // card reorder the images. `dragIndex` is set only for a thumbnail drag, which tells the two apart.
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [filesOver, setFilesOver] = useState(false);
+
+  function endImageDrag() {
+    setDragIndex(null);
+    setOverIndex(null);
+  }
+
+  function onZoneDragOver(event: DragEvent<HTMLDivElement>) {
+    if (dragIndex !== null || !event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = images.length < MAX_IMAGES ? "copy" : "none";
+    setFilesOver(true);
+  }
+
+  function onZoneDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFilesOver(false);
+  }
+
+  function onZoneDrop(event: DragEvent<HTMLDivElement>) {
+    if (dragIndex !== null) return;
+    event.preventDefault();
+    setFilesOver(false);
+    onFiles(event.dataTransfer.files);
+  }
+
+  function onThumbDragOver(event: DragEvent<HTMLDivElement>, index: number) {
+    if (dragIndex === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setOverIndex(index);
+  }
+
+  function onThumbDrop(event: DragEvent<HTMLDivElement>, index: number) {
+    if (dragIndex === null) return;
+    event.preventDefault();
+    if (dragIndex !== index) moveImage(dragIndex, index);
+    endImageDrag();
+  }
 
   async function adjustStock(row: VariantRow) {
     if (!product) return;
@@ -446,23 +490,35 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
       ) : null}
 
       <Card title={`Images (${images.length}/${MAX_IMAGES})`} actions={pendingImages ? <span className="text-xs text-black/50 dark:text-white/50">{pendingImages} not uploaded yet · uploaded when you save</span> : null}>
-        <div className="flex flex-wrap gap-4">
+        <div onDragOver={onZoneDragOver} onDragLeave={onZoneDragLeave} onDrop={onZoneDrop} className={`-m-2 flex flex-wrap gap-4 rounded-md p-2 outline-2 outline-dashed outline-offset-2 transition-colors ${filesOver ? "bg-black/3 outline-black/30 dark:bg-white/4 dark:outline-white/30" : "outline-transparent"}`}>
           {images.map((image, index) => (
-            <div key={image.id} className="flex w-36 flex-col gap-2">
-              <div className="relative">
+            <div key={image.id} className={`flex w-36 flex-col gap-2 ${dragIndex === index ? "opacity-40" : ""}`}>
+              <div
+                draggable
+                title="Drag to reorder"
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", image.id);
+                  setDragIndex(index);
+                }}
+                onDragOver={(event) => onThumbDragOver(event, index)}
+                onDrop={(event) => onThumbDrop(event, index)}
+                onDragEnd={endImageDrag}
+                className={`relative cursor-grab active:cursor-grabbing ${overIndex === index && dragIndex !== index ? "ring-2 ring-foreground ring-offset-2" : ""}`}
+              >
                 <Thumb src={image.url} alt={image.alt || title} size={144} />
                 {!image.key ? <span className="absolute left-1 top-1"><Badge tone="amber">Not saved</Badge></span> : null}
               </div>
               <Input placeholder="Alt text" value={image.alt} maxLength={150} onChange={(event) => setImages((current) => current.map((item) => (item.id === image.id ? { ...item, alt: event.target.value } : item)))} />
               <div className="flex justify-between text-xs">
-                <Button variant="ghost" className="px-1 py-0.5 text-xs" disabled={index === 0} onClick={() => moveImage(index, -1)} aria-label="Move left">
+                <Button variant="ghost" className="px-1 py-0.5 text-xs" disabled={index === 0} onClick={() => moveImage(index, index - 1)} aria-label="Move left">
                   ←
                 </Button>
                 {index === 0 ? <Badge>Main</Badge> : null}
                 <Button variant="ghost" className="px-1 py-0.5 text-xs text-red-600" onClick={() => removeImage(image.id)}>
                   Remove
                 </Button>
-                <Button variant="ghost" className="px-1 py-0.5 text-xs" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)} aria-label="Move right">
+                <Button variant="ghost" className="px-1 py-0.5 text-xs" disabled={index === images.length - 1} onClick={() => moveImage(index, index + 1)} aria-label="Move right">
                   →
                 </Button>
               </div>
@@ -470,7 +526,7 @@ function EditorForm({ product, categoryOptions, onSaved, onDeleted }: { product:
           ))}
           {images.length < MAX_IMAGES ? (
             <label className="flex h-36 w-36 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-center text-xs text-black/60 hover:bg-black/[0.03] dark:border-white/20 dark:text-white/60">
-              Add images
+              {filesOver ? "Drop to add" : "Add or drop images"}
               <span className="mt-1 text-[10px]">JPEG, PNG, WebP, AVIF · 5 MB</span>
               <input type="file" accept={ACCEPTED_IMAGES} multiple className="sr-only" onChange={(event) => { onFiles(event.target.files); event.target.value = ""; }} />
             </label>

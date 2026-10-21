@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -17,12 +18,9 @@ const chevron = (
 );
 
 export function Logo({ size = 24 }: { size?: number }) {
-  return (
-    <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-heading)", fontWeight: "var(--font-heading-weight)", fontSize: size, letterSpacing: ".18em", color: "var(--color-text)" }}>
-      <span style={{ width: size > 24 ? 16 : 14, height: size > 24 ? 16 : 14, border: "2px solid var(--color-accent)", transform: "rotate(45deg)" }} />
-      VEKTOR
-    </span>
-  );
+  // The wordmark image is 3:1; `size` is the old text size, so scale the height from it.
+  const height = Math.round(size * 1.9);
+  return <Image src="/logo.png" alt="Vektor" width={height * 3} height={height} priority style={{ height, width: height * 3, maxWidth: "none", alignSelf: "flex-start", objectFit: "contain", display: "block" }} />;
 }
 
 // Site header: frosted glass, navigation on the left, the wordmark centred, account and bag on the right.

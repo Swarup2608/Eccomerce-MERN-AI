@@ -36,6 +36,10 @@ const OCCASION_TAGS: Record<Occasion, string[]> = {
 // Preferred hem length per occasion; modest/covered occasions lean longer.
 const OCCASION_LENGTH: Partial<Record<Occasion, string[]>> = { wedding: ["Maxi", "Midi"], religious: ["Maxi", "Midi"], business: ["Midi", "Maxi"], party: ["Mini", "Midi"], beach: ["Mini", "Midi"] };
 
+// Ethnic wear is only suggested for these occasions; anywhere else it is pushed down (the shop's kurtas carry no occasion attribute, so nothing else would).
+const ETHNIC = /kurta|kurti|saree|sari|lehenga|anarkali|sherwani|salwar|churidar|dhoti|ethnic/i;
+const ETHNIC_OCCASIONS: Occasion[] = ["wedding", "festive", "religious"];
+
 const AIRY = ["Cotton", "Linen", "Rayon"];
 const WARM = ["Wool", "Blend", "Polyester", "Denim"];
 const RAIN_SENSITIVE = ["Silk", "Linen"];
@@ -59,6 +63,8 @@ export function scoreProduct(product: ProductDoc, ctx: Ctx): { score: number; re
   const reasons: string[] = [];
   let score = 0;
   const add = (points: number, reason?: string) => { score += points; if (reason) reasons.push(reason); };
+
+  if (ETHNIC.test(`${product.title} ${(product.tags ?? []).join(" ")}`) && !ETHNIC_OCCASIONS.includes(ctx.occasion)) add(-60);
 
   const occasions = list(a.occasion);
   if (OCCASION_TAGS[ctx.occasion].some((o) => occasions.includes(o))) add(40, `made for ${ctx.occasion}`);

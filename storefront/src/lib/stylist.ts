@@ -13,6 +13,8 @@ export const CATEGORIES = [
 ] as const;
 export const WARDROBE_OCCASIONS = ["Casual", "Party", "Work", "Festive"] as const;
 export const OCCASIONS = ["casual", "sightseeing", "business", "wedding", "party", "religious", "beach", "festive"] as const;
+export const GENDERS = [{ value: "women", label: "Women" }, { value: "men", label: "Men" }] as const;
+export type Gender = (typeof GENDERS)[number]["value"];
 export type Source = "store" | "wardrobe" | "addons";
 
 export interface WardrobeInput {
@@ -30,7 +32,7 @@ export interface WardrobeItem extends WardrobeInput { id: string; createdAt: str
 
 export interface Suggestion { id: string; title: string; brand?: string; slug?: string; price?: number; image: string | null; score: number; reasons: string[]; sizes: (string | undefined)[] }
 export interface Outfit { itemIds: string[]; score: number; reasons: string[]; addons: { slot: string; options: Suggestion[] }[] }
-export interface SuggestRequest { query?: string; source: Source; budget?: number; occasion?: string; startDate?: string; endDate?: string; city?: string }
+export interface SuggestRequest { query?: string; gender?: Gender; source: Source; budget?: number; occasion?: string; startDate?: string; endDate?: string; city?: string }
 export interface SuggestResult { source: Source; occasion: string; budget: number | null; place: string | null; weather: { avgC: number; minC: number; maxC: number; rainyDays: number; band: string; source: string } | null; notes: string[]; store: Suggestion[]; outfits: Outfit[] }
 
 // Same cookie session as the shop API; an expired access token is refreshed once, like authFetch.

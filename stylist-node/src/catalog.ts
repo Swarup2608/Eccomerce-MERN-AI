@@ -8,7 +8,7 @@ export type Kind = "dress" | "footwear" | "accessory";
 const KIND_WORDS: [Kind, RegExp][] = [
   ["footwear", /footwear|shoe|sneaker|sandal|loafer|heel|boot|slipper|flip/],
   ["accessory", /accessor|bag|backpack|handbag|watch|belt|jewel|necklace|earring|bracelet|scarf|sunglass/],
-  ["dress", /dress|gown|kurta|kurti|saree|sari|lehenga|frock|jumpsuit|anarkali|co-?ord/],
+  ["dress", /dress|gown|kurta|kurti|saree|sari|lehenga|frock|jumpsuit|anarkali|co-?ord|shirt|polo|tops?\b|blouse/],
 ];
 
 // Maps a leaf category's name to the add-on rule that describes it (see ADDON_RULES in outfits.ts).
@@ -22,7 +22,17 @@ const RULE_WORDS: [string, RegExp][] = [
   ["jewellery", /jewel|necklace|earring|bracelet|bangle|ring/],
 ];
 
-export interface CategoryInfo { id: ObjectId; kind: Kind | null; rule: string }
+export type Gender = "women" | "men";
+export const GENDERS = ["women", "men"] as const;
+
+export interface CategoryInfo { id: ObjectId; kind: Kind | null; rule: string; gender: Gender | null }
+
+// "Women > Dresses" is women's, "Men > Shirts" is men's; shared trees (Footwear, Bags ...) have no gender here and are filtered per product.
+const genderOf = (chain: string): Gender | null => (/\bwomen|\bladies/.test(chain) ? "women" : /\bmen/.test(chain) ? "men" : null);
+
+// Products in shared categories may carry a Men / Women / Unisex attribute; products without one are kept.
+export const genderFilter = (gender: Gender | undefined) =>
+  gender ? { $or: [{ "attributes.gender": { $exists: false } }, { "attributes.gender": { $in: [gender === "men" ? "Men" : "Women", "Unisex"] } }] } : {};
 
 let cache: { at: number; byId: Map<string, CategoryInfo> } | undefined;
 
@@ -36,12 +46,12 @@ export async function categories(): Promise<Map<string, CategoryInfo>> {
     const chain = [...((d.ancestors as ObjectId[] | undefined) ?? []).map((a) => names.get(String(a)) ?? ""), own].join(" ");
     // The nearest category wins: "Women > Footwear > Sandals" is footwear even if a parent mentions another kind.
     const kind = KIND_WORDS.find(([, re]) => re.test(own))?.[0] ?? KIND_WORDS.find(([, re]) => re.test(chain))?.[0] ?? null;
-    byId.set(String(d._id), { id: d._id as ObjectId, kind, rule: RULE_WORDS.find(([, re]) => re.test(own))?.[0] ?? "" });
+    byId.set(String(d._id), { id: d._id as ObjectId, kind, rule: RULE_WORDS.find(([, re]) => re.test(own))?.[0] ?? "", gender: genderOf(chain) });
   }
   cache = { at: Date.now(), byId };
   return byId;
 }
 
-export async function categoryIds(kinds: Kind[]): Promise<ObjectId[]> {
-  return [...(await categories()).values()].filter((c) => c.kind && kinds.includes(c.kind)).map((c) => c.id);
+export async function categoryIds(kinds: Kind[], gender?: Gender): Promise<ObjectId[]> {
+  return [...(await categories()).values()].filter((c) => c.kind && kinds.includes(c.kind) && (!gender || !c.gender || c.gender === gender)).map((c) => c.id);
 }

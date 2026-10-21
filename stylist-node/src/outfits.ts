@@ -1,6 +1,6 @@
 import type { Filter } from "mongodb";
 import { getDb } from "./db.js";
-import { categories, categoryIds } from "./catalog.js";
+import { categories, categoryIds, genderFilter, GENDERS, type Gender } from "./catalog.js";
 import { BadRequest, candidates, resolveWeather, suggestionOf, type Suggestion } from "./recommend.js";
 import { parseQuery } from "./query.js";
 import { OCCASIONS, rank, scoreProduct, temperatureBand, type Ctx, type Occasion, type ProductDoc } from "./scoring.js";
@@ -17,6 +17,8 @@ export interface SuggestInput {
   /** Integer paise. For add-ons it is the total for everything added. */
   budget?: number;
   occasion?: Occasion;
+  /** Which shop section to suggest from; omitted means any. */
+  gender?: Gender;
   startDate?: string;
   endDate?: string;
   city?: string;
@@ -98,18 +100,18 @@ export function scoreAddon(product: ProductDoc, leafSlug: string, ctx: Ctx, outf
   return { score, reasons };
 }
 
-async function addonProducts(maxPrice?: number): Promise<{ products: ProductDoc[]; ruleOf: (p: ProductDoc) => string }> {
+async function addonProducts(maxPrice?: number, gender?: Gender): Promise<{ products: ProductDoc[]; ruleOf: (p: ProductDoc) => string }> {
   const cats = await categories();
-  const ids = await categoryIds(["footwear", "accessory"]);
+  const ids = await categoryIds(["footwear", "accessory"], gender);
   if (!ids.length) return { products: [], ruleOf: () => "" };
-  const filter: Filter<ProductDoc> = { status: "active", totalStock: { $gt: 0 }, category: { $in: ids } };
+  const filter: Filter<ProductDoc> = { status: "active", totalStock: { $gt: 0 }, category: { $in: ids }, ...genderFilter(gender) } as Filter<ProductDoc>;
   if (maxPrice !== undefined) filter.minPrice = { $lte: maxPrice };
   const products = await (await getDb()).collection<ProductDoc>("products").find(filter).limit(500).toArray();
   return { products, ruleOf: (p) => cats.get(String(p.category))?.rule ?? "" };
 }
 
-export async function attachAddons(outfits: Outfit[], wardrobe: WardrobeItem[], ctx: Ctx, budget?: number): Promise<void> {
-  const { products, ruleOf } = await addonProducts(budget);
+export async function attachAddons(outfits: Outfit[], wardrobe: WardrobeItem[], ctx: Ctx, budget?: number, gender?: Gender): Promise<void> {
+  const { products, ruleOf } = await addonProducts(budget, gender);
   const byId = new Map(wardrobe.map((w) => [w.id, w]));
   for (const outfit of outfits) {
     const owned = outfit.itemIds.map((id) => byId.get(id)).filter((w): w is WardrobeItem => !!w);
@@ -135,6 +137,7 @@ export async function suggest(input: unknown, wardrobe: WardrobeItem[]) {
   const i = (input ?? {}) as Record<string, unknown>;
   const source = SOURCES.find((s) => s === i.source);
   if (!source) throw new BadRequest(`source must be one of: ${SOURCES.join(", ")}`);
+  const gender = GENDERS.find((g) => g === i.gender);
   const query = typeof i.query === "string" ? i.query.slice(0, 300) : "";
   const parsed = parseQuery(query);
   const occasion = (OCCASIONS as readonly string[]).includes(i.occasion as string) ? (i.occasion as Occasion) : parsed.occasion ?? "casual";
@@ -158,7 +161,7 @@ export async function suggest(input: unknown, wardrobe: WardrobeItem[]) {
 
   const result = { source, occasion, budget: budget ?? null, place: place ?? null, weather: weather ?? null, notes, store: [] as Suggestion[], outfits: [] as Outfit[] };
   if (source === "store") {
-    const products = await candidates(budget);
+    const products = await candidates(budget, gender);
     result.store = rank(products, ctx, 8).map((r) => suggestionOf(r.product, r.score, r.reasons));
     if (!result.store.length) notes.push("Nothing in the shop matched. Try a higher budget or a different occasion.");
     return result;
@@ -169,6 +172,6 @@ export async function suggest(input: unknown, wardrobe: WardrobeItem[]) {
   }
   result.outfits = buildOutfits(wardrobe, ctx);
   if (!result.outfits.length) notes.push("Nothing in your wardrobe fits this occasion and weather.");
-  else if (source === "addons") await attachAddons(result.outfits, wardrobe, ctx, budget);
+  else if (source === "addons") await attachAddons(result.outfits, wardrobe, ctx, budget, gender);
   return result;
 }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { AdminGate } from "@/components/admin-gate";
 import { AdminNav } from "@/components/admin-nav";
 import { StatusBadge } from "@/components/status-badge";
@@ -12,9 +13,8 @@ export default async function ConsoleLayout({ children }: LayoutProps<"/">) {
     <div className="flex flex-1 flex-col md:flex-row">
       <aside className="flex flex-col gap-4 bg-foreground px-0 py-4 text-background md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:gap-8 md:py-6">
         <div className="flex items-center justify-between gap-3 px-4">
-          <span className="flex items-center gap-2.5 font-heading text-lg font-bold tracking-[0.18em]">
-            <span aria-hidden className="size-3 rotate-45 border-2 border-accent" />
-            VEKTOR
+          <span className="rounded bg-white px-2 py-1">
+            <Image src="/logo.png" alt="Vektor" width={120} height={40} priority className="h-8 w-auto" />
           </span>
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-background/50 md:hidden">Console</span>
         </div>

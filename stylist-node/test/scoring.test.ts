@@ -46,3 +46,10 @@ test("validation", () => {
   assert.throws(() => validate({ startDate: "2026-11-01", occasion: "casual" }), BadRequest);
   assert.equal(validate({ startDate: "2026-11-01", occasion: "casual", temperatureC: 20 }).limit, 5);
 });
+
+test("ethnic wear is not suggested for business but is for weddings", async () => {
+  const { scoreProduct } = await import("../src/scoring.js");
+  const kurta = { title: "Embroidered Kurta", variants: [{ isActive: true, stock: 1, price: 1 }], attributes: { material: "Cotton" } };
+  assert.ok(scoreProduct(kurta, { occasion: "business", weather: { avgC: 32, rainyDays: 0 } }).score <= 0);
+  assert.ok(scoreProduct(kurta, { occasion: "wedding", weather: { avgC: 32, rainyDays: 0 } }).score > 0);
+});

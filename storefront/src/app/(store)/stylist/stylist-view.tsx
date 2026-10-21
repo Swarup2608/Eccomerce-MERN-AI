@@ -7,7 +7,7 @@ import { Thumb } from "@/components/stylist-bits";
 import { Button, EmptyState, Field, Input, Notice, Select } from "@/components/ui";
 import { errorMessage } from "@/lib/auth";
 import { formatInr } from "@/lib/money";
-import { OCCASIONS, stylistApi, type Source, type Suggestion, type SuggestResult, type WardrobeItem } from "@/lib/stylist";
+import { GENDERS, OCCASIONS, stylistApi, type Gender, type Source, type Suggestion, type SuggestResult, type WardrobeItem } from "@/lib/stylist";
 
 const SOURCES: { value: Source; label: string; hint: string }[] = [
   { value: "store", label: "Only from the shop", hint: "New pieces you can buy" },
@@ -35,6 +35,7 @@ function ProductLink({ s }: { s: Suggestion }) {
 export function StylistView() {
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>([]);
   const [source, setSource] = useState<Source>("store");
+  const [gender, setGender] = useState<Gender | "">("");
   const [query, setQuery] = useState("");
   const [budget, setBudget] = useState("");
   const [occasion, setOccasion] = useState("");
@@ -62,6 +63,7 @@ export function StylistView() {
       setResult(
         await stylistApi.suggest({
           source,
+          ...(gender && { gender }),
           ...(query.trim() && { query: query.trim() }),
           ...(budget && Number.isFinite(rupees) && rupees > 0 && { budget: Math.round(rupees * 100) }),
           ...(occasion && { occasion }),
@@ -79,6 +81,17 @@ export function StylistView() {
   return (
     <div className="grid gap-12 lg:grid-cols-[minmax(0,420px)_1fr]">
       <form onSubmit={ask} className="flex flex-col gap-4 self-start" aria-label="Ask the stylist">
+        <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
+          <legend className="mb-1.5 p-0 text-sm font-medium">Styling for</legend>
+          <div className="grid grid-cols-2 gap-3">
+            {GENDERS.map((g) => (
+              <label key={g.value} className={`flex min-h-11 cursor-pointer items-center gap-3 border px-3 py-2 text-sm ${gender === g.value ? "border-foreground" : "border-foreground/20"}`}>
+                <input type="radio" name="gender" required checked={gender === g.value} onChange={() => setGender(g.value)} />
+                <span className="font-semibold">{g.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <Field label="What are you looking for?" hint='Try "something light for a beach trip under 3000".'>
           <textarea className="input min-h-24 py-2" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={300} />
         </Field>

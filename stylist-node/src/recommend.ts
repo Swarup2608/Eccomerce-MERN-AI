@@ -1,6 +1,6 @@
 import type { Filter } from "mongodb";
 import { getDb } from "./db.js";
-import { categoryIds } from "./catalog.js";
+import { categoryIds, genderFilter, type Gender } from "./catalog.js";
 import { geocode, weatherFor, type WeatherSummary } from "./weather.js";
 import { OCCASIONS, rank, temperatureBand, type Occasion, type ProductDoc } from "./scoring.js";
 
@@ -60,10 +60,10 @@ export async function resolveWeather(q: RecommendInput): Promise<{ place: string
 }
 
 // Read-only: loads in-stock active dresses (every category the shop's tree identifies as a dress / gown / kurta ...).
-export async function candidates(maxPrice?: number): Promise<ProductDoc[]> {
-  const ids = await categoryIds(["dress"]);
+export async function candidates(maxPrice?: number, gender?: Gender): Promise<ProductDoc[]> {
+  const ids = await categoryIds(["dress"], gender);
   if (!ids.length) return [];
-  const filter: Filter<ProductDoc> = { status: "active", totalStock: { $gt: 0 }, category: { $in: ids } };
+  const filter: Filter<ProductDoc> = { status: "active", totalStock: { $gt: 0 }, category: { $in: ids }, ...genderFilter(gender) } as Filter<ProductDoc>;
   if (maxPrice !== undefined) filter.minPrice = { $lte: maxPrice };
   return (await getDb()).collection<ProductDoc>("products").find(filter).limit(500).toArray();
 }

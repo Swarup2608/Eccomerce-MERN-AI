@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { config } from "./config.js";
 import { closeDb } from "./db.js";
-import { userIdFrom } from "./auth.js";
+import { authenticate } from "./auth.js";
 import { BadRequest, recommend } from "./recommend.js";
 import { suggest } from "./outfits.js";
 import { converse } from "./chat.js";
@@ -68,8 +68,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (req.method === "POST" && path === "/recommend") return send(res, 200, await recommend(await readBody(req, 10_000)));
 
     if (path === `${BASE}/wardrobe` || path.startsWith(`${BASE}/wardrobe/`) || path === `${BASE}/suggest` || path === `${BASE}/chat` || path === `${BASE}/feedback`) {
-      const userId = userIdFrom(req);
-      if (!userId) throw new HttpError(401, "Sign in to continue");
+      const auth = authenticate(req);
+      if (!("userId" in auth)) {
+        log("auth_failed", { path, reason: auth.reason });
+        throw new HttpError(401, `Sign in to continue: ${auth.reason}`);
+      }
+      const { userId } = auth;
       throttle(userId, path === `${BASE}/chat` ? 12 : 40, path === `${BASE}/chat` ? "chat" : "api");
       if (req.method === "GET" && path === `${BASE}/wardrobe`) return send(res, 200, { items: await listItems(userId) });
       if (req.method === "POST" && path === `${BASE}/wardrobe`) return send(res, 201, { item: await addItem(userId, validateItem(await readBody(req, MAX_IMAGE_CHARS + 5_000))) });

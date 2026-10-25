@@ -56,10 +56,11 @@ export function HeaderBar({ categories }: { categories: CategoryNode[] }) {
           <Link href="/products" onMouseEnter={() => setMenu(true)} onFocus={() => setMenu(true)} aria-expanded={menu} style={{ ...navLink, color: color(pathname.startsWith("/products")) }}>
             Shop{chevron}
           </Link>
-          <Link href="/products?sort=newest" onMouseEnter={() => setMenu(false)} className="vk-hide-sm" style={{ ...navLink, color: "var(--color-text)" }}>
+          {/* New and Featured are also in the Shop menu and the top bar, so they give way first when the row gets tight. */}
+          <Link href="/products?sort=newest" onMouseEnter={() => setMenu(false)} className="vk-hide-md" style={{ ...navLink, color: "var(--color-text)" }}>
             New
           </Link>
-          <Link href="/products?featured=true" onMouseEnter={() => setMenu(false)} className="vk-hide-sm" style={{ ...navLink, color: "var(--color-text)" }}>
+          <Link href="/products?featured=true" onMouseEnter={() => setMenu(false)} className="vk-hide-md" style={{ ...navLink, color: "var(--color-text)" }}>
             Featured<span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-accent)" }} />
           </Link>
           <Link href="/stylist" onMouseEnter={() => setMenu(false)} className="vk-hide-sm" style={{ ...navLink, color: "var(--color-text)" }}>

@@ -11,6 +11,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node --env-file-if-exists=.env dist/server.js",
     "typecheck": "tsc --noEmit",
+    "embed": "tsx --env-file-if-exists=.env src/embed-cli.ts",
+    "eval": "tsx --env-file-if-exists=.env src/eval-cli.ts",
+    "eval:chat": "tsx --env-file-if-exists=.env src/eval-cli.ts --chat",
     "test": "node --import tsx --test \"test/*.test.ts\""
   },
   "dependencies": {

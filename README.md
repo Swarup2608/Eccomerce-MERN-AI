@@ -14,12 +14,13 @@
 ![Stripe](https://img.shields.io/badge/Stripe-payments-635BFF?logo=stripe&logoColor=white)
 ![Razorpay](https://img.shields.io/badge/Razorpay-payments-0C2451?logo=razorpay&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-local_LLM-000000?logo=ollama&logoColor=white)
 
-**A production-style e-commerce platform: a customer storefront, an admin console and a hardened REST API, in one TypeScript monorepo.**
+**A production-style e-commerce platform: a customer storefront, an admin console, a hardened REST API and a local-LLM AI stylist, in one TypeScript monorepo.**
 
-[Features](#-features) · [Architecture](#-architecture) · [Engineering highlights](#-engineering-highlights) · [Getting started](#-getting-started) · [Testing](#-testing) · [Roadmap](#-roadmap)
+[Features](#-features) · [Architecture](#-architecture) · [Engineering highlights](#-engineering-highlights) · [AI stylist](#-ai-stylist) · [Getting started](#-getting-started) · [Testing](#-testing) · [Roadmap](#-roadmap)
 
-<img src="docs/readme/stats.svg" alt="127 tests · 83 API route handlers · 3 apps · 0 known production vulnerabilities" width="100%"/>
+<img src="docs/readme/stats.svg" alt="146 tests · 83 API route handlers · 4 apps · 0 known production vulnerabilities" width="100%"/>
 
 </div>
 
@@ -56,6 +57,18 @@
 
 </td>
 </tr>
+<tr>
+<td colspan="2" valign="top">
+
+### 🪄 AI stylist
+- **Ask the stylist**: outfit picks from the shop, from your own wardrobe, or your wardrobe plus shop add-ons, tuned to the **occasion, budget and the weather** where you'll be. Pick "Other" to describe an occasion in your own words
+- **Chat**: a tool-using shopping agent that searches the real catalog, checks stock and weather, shows what it is doing as it works, and only ever recommends in-stock products
+- **My wardrobe**: photograph and tag the clothes you own
+- **More like this / Not for me** feedback that personalises later picks
+- Runs on **free, local models through Ollama**; if the model is down or slow, every feature falls back to rule-based results
+
+</td>
+</tr>
 </table>
 
 ---
@@ -64,13 +77,16 @@
 
 <img src="docs/readme/architecture.svg" alt="Architecture diagram" width="100%"/>
 
-Three apps share one npm-workspaces monorepo:
+Four apps share one npm-workspaces monorepo:
 
 | App | Path | Stack | Port |
 |---|---|---|---|
 | **REST API** | [`backend/`](backend) | Express 5 · Mongoose 9 · ioredis · Zod 4 · argon2 · Helmet | `4000` |
 | **Storefront** | [`storefront/`](storefront) | Next.js 16 (App Router, Turbopack) · React 19 · Tailwind 4 | `3000` |
 | **Admin** | [`admin/`](admin) | Next.js 16 · React 19 · Tailwind 4 | `3001` |
+| **AI stylist** | [`stylist-node/`](stylist-node) | Node 22 `http` · MongoDB driver · Ollama · Open-Meteo | `4100` |
+
+The stylist is a separate, mostly read-only service. It reads the catalog from the shop's MongoDB, and it recognises signed-in shoppers from the API's own access cookie, so there is no second login. It writes only to its own collections (wardrobe, feedback, product vectors).
 
 ---
 
@@ -143,11 +159,69 @@ stateDiagram-v2
 │       └── tests/           integration and unit tests (real Mongo + Redis)
 ├── storefront/              Next.js customer app
 ├── admin/                   Next.js admin console
+├── stylist-node/            AI stylist service
+│   ├── src/
+│   │   ├── server.ts        routes, auth, per-shopper throttling
+│   │   ├── scoring.ts       rule score: occasion, weather, material, size
+│   │   ├── outfits.ts       /suggest: shop picks, wardrobe outfits, add-ons
+│   │   ├── intent.ts        free text → occasion, budget, colours, gender, city
+│   │   ├── embeddings.ts    product vectors (npm run embed)
+│   │   ├── hybrid.ts        rules + semantic + likes, then a diversity pass
+│   │   ├── chat.ts          tool-calling chat agent with output checks
+│   │   ├── llm.ts           thin Ollama client
+│   │   ├── feedback.ts      likes and dislikes
+│   │   ├── metrics.ts       counters, latency percentiles, JSON logs
+│   │   └── eval-cli.ts      offline intent evaluation (npm run eval)
+│   └── test/
 ├── docs/readme/             animated README graphics
 └── .github/                 CI workflow and Dependabot
 ```
 
 </details>
+
+---
+
+## 🪄 AI stylist
+
+The stylist is built so that **the model can make results better but can never make them wrong**. Prices, stock, product ids and totals always come from code and the database, never from model text.
+
+```mermaid
+flowchart LR
+    Q[Shopper request] --> R[Rule parser]
+    Q --> L[Local LLM<br/>JSON schema]
+    L --> V[Validate field by field]
+    R --> I[Intent]
+    V --> I
+    I --> C[In-stock candidates<br/>MongoDB]
+    C --> S[Rule score<br/>occasion · weather · material]
+    S --> E[+ semantic similarity<br/>nomic-embed vectors]
+    E --> P[+ shopper's likes<br/>− dislikes removed]
+    P --> D[Diversity pass<br/>MMR]
+    D --> O[Picks + reasons]
+```
+
+- **Intent extraction with guard rails.** The keyword parser always runs. The local model refines it through a JSON schema, and its answer is checked field by field against allowed values, so a malformed or hostile answer can only lose information, never inject it. An exact budget or colour stated in the text beats the model's reading.
+- **Hybrid ranking.** The rule score (occasion, temperature band, rain, fabric, sizes in stock) is combined with cosine similarity between the request and product embeddings, plus a nudge toward the centroid of products the shopper liked. A maximal-marginal-relevance pass then stops near-identical items from filling the list. Disliked products never appear.
+- **Embeddings without a vector database.** Each active product is embedded once and stored in `stylist_product_vectors`, keyed by a content hash, so only new or edited products are sent to the model. The service re-checks the catalog every 15 minutes, and removed products are dropped from the index so they can never surface. A few hundred products are compared in memory. If there is no index, ranking uses rules only.
+- **A chat agent that can't invent products.** The model calls four tools (`searchProducts`, `getWeather`, `checkInventory`, `getPreferences`) that run in our code. The answer is then post-processed: any product id that didn't come from a tool result is dropped, and the outfit total and the over-budget warning are computed in code. Tool output is treated as data, not instructions. Asking "for women or men?" is enforced in code rather than left to the prompt, because the small model skipped it.
+- **Streaming that never shows unchecked text.** The chat streams newline-delimited JSON: live status lines ("Searching the shop for "linen shirt"", "Checking the weather in Goa") while the agent works, then the validated answer. Model text is not streamed token by token, because it has to pass the id and budget checks first.
+- **A hard deadline.** The agent loop, including its tool calls, races a 35-second deadline and has at most 5 steps. When it runs out, a rule-only fallback answers in well under a second, so the shopper never waits past the browser's timeout.
+- **Optional written summary.** On request, the model rephrases the validated top picks in two sentences. It never sees or produces prices or ids, and a template summary is used if it fails.
+- **Observability.** Structured JSON logs and an in-memory `GET /metrics` with counters (LLM calls, tokens, fallbacks, invalid ids) and p50/p95 latency.
+- **Measured, not guessed.** Two offline evals, run on a laptop with `qwen3:4b-instruct`:
+  - `npm run eval:stylist` scores intent extraction on 12 labelled requests: **60/60** fields with the model versus **53/60** for rules alone, at about 1.4 s per request.
+  - `npm run eval:stylist:chat` runs the agent on 7 scenarios against the real catalog, including a prompt-injection attempt and a request with no gender. It checks every answer against the database: products are real and in stock, within budget, from the right section, no invented ids, and it asks when unsure. **All checks pass**, with a median of about 6.5 s per reply.
+
+  These evals have already caught real bugs: the agent skipping the gender question, a "Diwali puja" read as religious, and one reply that took 52 s before the hard deadline existed.
+
+| Endpoint | Auth | What it does |
+|---|---|---|
+| `POST /api/v1/stylist/suggest` | shopper | Shop picks, wardrobe outfits or wardrobe + add-ons |
+| `POST /api/v1/stylist/chat` | shopper | Chat agent (12 requests/min per shopper). Send `Accept: application/x-ndjson` to stream progress lines, then the result |
+| `POST /api/v1/stylist/feedback` | shopper | `like`, `dislike` or `clear` for a product |
+| `GET/POST/DELETE /api/v1/stylist/wardrobe` | shopper | Wardrobe items |
+| `POST /recommend` | none | Stateless dress recommendations by weather and occasion |
+| `GET /health` · `GET /metrics` | none | Liveness and counters |
 
 ---
 
@@ -157,6 +231,7 @@ stateDiagram-v2
 - **Node.js ≥ 22.12**
 - **MongoDB** (local, or a free Atlas cluster)
 - **Redis** (local, or a free Redis Cloud / Upstash instance)
+- Optional: **[Ollama](https://ollama.com)** for the stylist's AI features (the stylist works without it, using rules only)
 
 ### 1. Install
 
@@ -172,9 +247,10 @@ npm install
 cp backend/.env.example backend/.env
 cp storefront/.env.example storefront/.env.local
 cp admin/.env.example admin/.env.local
+cp stylist-node/.env.example stylist-node/.env
 ```
 
-In `backend/.env`, set at least `MONGODB_URI`, `REDIS_URL`, `ACCESS_TOKEN_SECRET` and `ADMIN_ACCESS_TOKEN_SECRET`. Generate each secret with:
+In `backend/.env`, set at least `MONGODB_URI`, `REDIS_URL`, `ACCESS_TOKEN_SECRET` and `ADMIN_ACCESS_TOKEN_SECRET`. In `stylist-node/.env`, use the **same** `MONGODB_URI`, database name and `ACCESS_TOKEN_SECRET` as the backend. Generate each secret with:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
@@ -195,6 +271,29 @@ Cash on Delivery is always available. To test Stripe webhooks locally:
 
 </details>
 
+<details>
+<summary><b>AI stylist (local models, free)</b></summary>
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama server |
+| `STYLIST_CHAT_MODEL` | `qwen3:4b-instruct` | Intent extraction, chat agent, summaries |
+| `STYLIST_EMBED_MODEL` | `nomic-embed-text` | Product and query embeddings |
+| `STYLIST_LLM_TIMEOUT_MS` | `20000` | Per-call timeout before falling back to rules |
+| `STYLIST_REINDEX_MINUTES` | `15` | How often new or edited products are embedded (`0` turns it off) |
+| `STYLIST_ACCESS_COOKIE` | `localhost-user-access-token` | The API's access cookie name (`__Secure-ecommerce-user-access-token` in production) |
+| `NEXT_PUBLIC_STYLIST_URL` (storefront) | `http://localhost:4100` | Where the storefront reaches the stylist |
+
+```bash
+ollama pull qwen3:4b-instruct
+ollama pull nomic-embed-text
+npm run embed:stylist     # optional: build the product index now instead of waiting for the background job
+```
+
+Without Ollama, intent comes from the keyword parser, ranking uses rules only, and chat returns rule-based matches.
+
+</details>
+
 ### 3. Seed and run
 
 ```bash
@@ -204,30 +303,34 @@ SEED_ADMIN_EMAIL=you@example.com SEED_ADMIN_PASSWORD='Str0ng!Passw0rd' npm run s
 # optional: demo categories and products
 npm run seed:catalog
 
-# start the API, storefront and admin together
+# start the API, storefront, admin and stylist together
 npm run dev
 ```
 
 | App | URL |
 |---|---|
-| Storefront | http://localhost:3000 |
+| Storefront | http://localhost:3000 (the stylist is at `/stylist`, sign-in required) |
 | Admin | http://localhost:3001 (the login code shows up in the API log when SMTP isn't set) |
 | API health | http://localhost:4000/health/live |
+| Stylist health / metrics | http://localhost:4100/health · http://localhost:4100/metrics |
 
 ### Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Runs all three apps with live reload |
+| `npm run dev` | Runs all four apps with live reload (`dev:backend`, `dev:storefront`, `dev:admin`, `dev:stylist` run one) |
 | `npm run build` | Production build of every workspace |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript across the monorepo |
-| `npm test` | Backend test suite |
+| `npm test` | Backend and stylist test suites |
 | `npm run audit:prod` | `npm audit` for production dependencies |
 | `npm run seed:admin` / `reset:admin` | Create or reset the admin account |
 | `npm run unblock:user` | Lift a lockout on an account |
 | `npm run seed:catalog` | Load demo catalog data |
 | `npm run cleanup:uploads` | Delete images that were uploaded but never attached to a product |
 | `npm run r2:cors` | Apply the CORS rule the R2 bucket needs for browser uploads |
+| `npm run embed:stylist` | Embed new or changed products for the stylist's semantic search right away |
+| `npm run eval:stylist` | Score intent extraction, rules only and with the local model |
+| `npm run eval:stylist:chat` | The intent eval plus end-to-end chat scenarios (needs MongoDB and Ollama) |
 
 ---
 
@@ -237,9 +340,11 @@ npm run dev
 npm test
 ```
 
-- **127 tests in 36 suites**, run against **real MongoDB and Redis**, not mocks. Locally, the harness starts its own `mongod` and `redis-server`; in CI it uses service containers.
+- **146 tests**: 127 backend tests in 36 suites, plus 19 stylist tests.
+- Backend tests run against **real MongoDB and Redis**, not mocks. Locally, the harness starts its own `mongod` and `redis-server`; in CI it uses service containers.
 - Payment gateways are replaced with fakes, so the payment and webhook paths run without network calls.
-- Coverage: auth flows (register, verify, login, MFA, reset, rotation, lockout), catalog, cart and shopper journeys, orders, payments, sales, tokens and app-level security.
+- Backend coverage: auth flows (register, verify, login, MFA, reset, rotation, lockout), catalog, cart and shopper journeys, orders, payments, sales, tokens and app-level security.
+- Stylist coverage: weather and occasion scoring, wardrobe outfits and add-ons, the diversity pass, dislikes and photo preference, validation of model output (intent fields and chat product ids), the in-code budget check, gender detection, cleaned progress lines and festival parsing. These tests need no model; the evals above cover the model.
 
 **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every push to `master` and on every pull request: `lint → typecheck → test (Mongo 7 + Redis 7) → npm audit`. Dependabot keeps dependencies up to date.
 
@@ -255,12 +360,11 @@ npm test
 - [ ] Background job queue (BullMQ) for order expiry and emails
 - [ ] Optimized images, `sitemap.xml` and JSON-LD product data
 - [ ] Docker Compose setup and a public live demo
-
 ---
 
 <div align="center">
 
-Built by **[Swarup2608](https://github.com/Swarup2608)** with TypeScript, Next.js, Express, MongoDB and Redis.
+Built by **[Swarup2608](https://github.com/Swarup2608)** with TypeScript, Next.js, Express, MongoDB, Redis and Ollama.
 
 ⭐ If this project helped you, consider giving it a star.
 

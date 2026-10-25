@@ -2,7 +2,7 @@
   "name": "eccomerce-mern-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "E-commerce monorepo: Express API backend, Next.js storefront and Next.js admin.",
+  "description": "E-commerce monorepo: Express API backend, Next.js storefront, Next.js admin and the AI stylist service.",
   "workspaces": [
     "backend",
     "storefront",
@@ -16,7 +16,7 @@
     "dev:admin": "npm run dev -w admin",
     "dev:stylist": "npm run dev -w stylist-node",
     "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces --if-present",
     "audit:prod": "npm audit --omit=dev",
@@ -27,8 +27,9 @@
     "seed:catalog": "npm run seed:catalog -w backend",
     "cleanup:uploads": "npm run cleanup:uploads -w backend",
     "r2:cors": "npm run r2:cors -w backend",
-    "seed:stylist": "npm run seed:stylist -w stylist-node",
-    "reset:stylist": "npm run reset:stylist -w stylist-node"
+    "embed:stylist": "npm run embed -w stylist-node",
+    "eval:stylist": "npm run eval -w stylist-node",
+    "eval:stylist:chat": "npm run eval:chat -w stylist-node"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

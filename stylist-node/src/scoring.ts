@@ -10,6 +10,7 @@ export interface ProductDoc {
   _id?: unknown;
   category?: unknown;
   title: string;
+  description?: string;
   slug?: string;
   brand?: string;
   tags?: string[];
@@ -40,6 +41,18 @@ const OCCASION_LENGTH: Partial<Record<Occasion, string[]>> = { wedding: ["Maxi",
 const ETHNIC = /kurta|kurti|saree|sari|lehenga|anarkali|sherwani|salwar|churidar|dhoti|ethnic/i;
 const ETHNIC_OCCASIONS: Occasion[] = ["wedding", "festive", "religious"];
 
+// Gym and loungewear only suits relaxed occasions.
+const SPORTY = /sweatshirt|hoodie|lounge|track ?pant|jogger|sports?\b|training|gym|activewear/i;
+const SPORTY_OK: Occasion[] = ["casual", "sightseeing", "beach"];
+
+// Plain tees are not business or ceremony wear.
+const TEE = /t-?shirt|\btee\b/i;
+const TEE_NOT_OK: Occasion[] = ["business", "wedding", "religious", "festive"];
+
+// Beach, resort and "casual" pieces are not office or temple wear (the shop's beach shirts carry no occasion attribute either).
+const LEISURE = /\bcasual\b|beach|resort|hawaiian/i;
+const LEISURE_NOT_OK: Occasion[] = ["business", "religious"];
+
 const AIRY = ["Cotton", "Linen", "Rayon"];
 const WARM = ["Wool", "Blend", "Polyester", "Denim"];
 const RAIN_SENSITIVE = ["Silk", "Linen"];
@@ -65,6 +78,12 @@ export function scoreProduct(product: ProductDoc, ctx: Ctx): { score: number; re
   const add = (points: number, reason?: string) => { score += points; if (reason) reasons.push(reason); };
 
   if (ETHNIC.test(`${product.title} ${(product.tags ?? []).join(" ")}`) && !ETHNIC_OCCASIONS.includes(ctx.occasion)) add(-60);
+
+  if (SPORTY.test(product.title) && !SPORTY_OK.includes(ctx.occasion)) add(-60);
+
+  if (TEE.test(product.title) && TEE_NOT_OK.includes(ctx.occasion)) add(-45);
+
+  if (LEISURE.test(`${product.title} ${(product.tags ?? []).join(" ")}`) && LEISURE_NOT_OK.includes(ctx.occasion)) add(-45);
 
   const occasions = list(a.occasion);
   if (OCCASION_TAGS[ctx.occasion].some((o) => occasions.includes(o))) add(40, `made for ${ctx.occasion}`);

@@ -4,8 +4,9 @@ const OCCASION_WORDS: [RegExp, Occasion][] = [
   [/\bwedding|sangeet|reception|mehendi|engagement\b/, "wedding"],
   [/\bparty|cocktail|club|date night|birthday\b/, "party"],
   [/\boffice|work|business|meeting|interview|formal\b/, "business"],
-  [/\btemple|puja|pooja|religious|prayer\b/, "religious"],
+  // Festivals come first: a "Diwali puja" is festive dressing, while a puja on its own is religious.
   [/\bdiwali|festive|festival|eid|navratri|onam|pongal\b/, "festive"],
+  [/\btemple|puja|pooja|religious|prayer\b/, "religious"],
   [/\bbeach|resort|pool\b/, "beach"],
   [/\bsightseeing|trip|travel|holiday|vacation|tour\b/, "sightseeing"],
   [/\bcasual|brunch|everyday|daily|college\b/, "casual"],

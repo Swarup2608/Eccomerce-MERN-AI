@@ -19,13 +19,42 @@ async function getJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+// Indian states and regions shoppers travel "to" that the geocoder doesn't know as places: its top hit for "Goa" is Genoa, Italy.
+// Each maps to its main city.
+const REGIONS: Record<string, Place> = {
+  goa: { name: "Goa, India", lat: 15.4909, lon: 73.8278 },
+  kerala: { name: "Kerala, India", lat: 9.9312, lon: 76.2673 },
+  kashmir: { name: "Kashmir, India", lat: 34.0837, lon: 74.7973 },
+  ladakh: { name: "Ladakh, India", lat: 34.1526, lon: 77.5771 },
+  sikkim: { name: "Sikkim, India", lat: 27.3389, lon: 88.6065 },
+  andaman: { name: "Andaman Islands, India", lat: 11.6234, lon: 92.7265 },
+  coorg: { name: "Coorg, India", lat: 12.4244, lon: 75.7382 },
+  rajasthan: { name: "Rajasthan, India", lat: 26.9124, lon: 75.7873 },
+  himachal: { name: "Himachal Pradesh, India", lat: 31.1048, lon: 77.1734 },
+  uttarakhand: { name: "Uttarakhand, India", lat: 30.3165, lon: 78.0322 },
+  meghalaya: { name: "Meghalaya, India", lat: 25.5788, lon: 91.8933 },
+};
+
+export interface GeoHit { name: string; admin1?: string; country?: string; country_code?: string; population?: number; latitude: number; longitude: number }
+
+const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+/** Picks the place the shopper most likely meant: an exact name match (Indian first, then the most populous), else the top hit. */
+export function pickPlace(city: string, hits: GeoHit[]): Place | null {
+  const region = REGIONS[plain(city).replace(/\s+(state|islands?|pradesh)$/, "")];
+  if (region) return region;
+  const exact = hits.filter((h) => plain(h.name) === plain(city));
+  const hit = [...exact].sort((a, b) => Number(b.country_code === "IN") - Number(a.country_code === "IN") || (b.population ?? 0) - (a.population ?? 0))[0] ?? hits[0];
+  return hit ? { name: [hit.name, hit.admin1, hit.country].filter(Boolean).join(", "), lat: hit.latitude, lon: hit.longitude } : null;
+}
+
 export async function geocode(city: string): Promise<Place> {
-  const data = await getJson<{ results?: { name: string; admin1?: string; country?: string; latitude: number; longitude: number }[] }>(
-    `https://geocoding-api.open-meteo.com/v1/search?count=1&name=${encodeURIComponent(city)}`,
-  );
-  const hit = data.results?.[0];
-  if (!hit) throw new Error(`could not find a place called "${city}"`);
-  return { name: [hit.name, hit.admin1, hit.country].filter(Boolean).join(", "), lat: hit.latitude, lon: hit.longitude };
+  const known = pickPlace(city, []);
+  if (known) return known;
+  const data = await getJson<{ results?: GeoHit[] }>(`https://geocoding-api.open-meteo.com/v1/search?count=10&name=${encodeURIComponent(city)}`);
+  const place = pickPlace(city, data.results ?? []);
+  if (!place) throw new Error(`could not find a place called "${city}"`);
+  return place;
 }
 
 const nums = (xs: (number | null)[] = []) => xs.filter((x): x is number => x != null);

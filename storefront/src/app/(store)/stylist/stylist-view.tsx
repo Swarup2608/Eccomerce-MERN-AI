@@ -3,34 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FormError } from "@/components/form-field";
-import { Thumb } from "@/components/stylist-bits";
+import { ProductLink, Thumb } from "@/components/stylist-bits";
 import { Button, EmptyState, Field, Input, Notice, Select } from "@/components/ui";
 import { errorMessage } from "@/lib/auth";
 import { formatInr } from "@/lib/money";
-import { GENDERS, OCCASIONS, stylistApi, type Gender, type Source, type Suggestion, type SuggestResult, type WardrobeItem } from "@/lib/stylist";
+import { GENDERS, OCCASIONS, stylistApi, type Gender, type Source, type SuggestResult, type WardrobeItem } from "@/lib/stylist";
 
 const SOURCES: { value: Source; label: string; hint: string }[] = [
   { value: "store", label: "Only from the shop", hint: "New pieces you can buy" },
   { value: "wardrobe", label: "Only from my wardrobe", hint: "Outfits from what you own" },
   { value: "addons", label: "My wardrobe + add-ons", hint: "Your clothes, plus shop pieces to complete them" },
 ];
-
-function ProductLink({ s }: { s: Suggestion }) {
-  const body = (
-    <>
-      <Thumb src={s.image} label={s.title} />
-      <span className="mt-2 block truncate text-sm font-semibold">{s.title}</span>
-      <span className="block text-sm tabular-nums">{s.price !== undefined ? formatInr(s.price) : null}{s.brand ? <span className="text-foreground/60"> · {s.brand}</span> : null}</span>
-    </>
-  );
-  return (
-    <article className="flex min-w-0 flex-col">
-      {s.slug ? <Link href={`/products/${s.slug}`} className="no-underline hover:text-accent-700">{body}</Link> : body}
-      {s.reasons.length ? <ul className="m-0 mt-1.5 list-none p-0 text-xs text-foreground/65">{s.reasons.slice(0, 3).map((r) => <li key={r}>{r}</li>)}</ul> : null}
-      {s.slug ? <Link href={`/products/${s.slug}`} className="mt-2 text-sm font-medium text-accent-700 underline underline-offset-4">View in shop</Link> : null}
-    </article>
-  );
-}
 
 export function StylistView() {
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>([]);
@@ -39,9 +22,12 @@ export function StylistView() {
   const [query, setQuery] = useState("");
   const [budget, setBudget] = useState("");
   const [occasion, setOccasion] = useState("");
+  const [occasionDetails, setOccasionDetails] = useState("");
   const [city, setCity] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [preferImages, setPreferImages] = useState(false);
+  const [explain, setExplain] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SuggestResult | null>(null);
@@ -64,9 +50,12 @@ export function StylistView() {
         await stylistApi.suggest({
           source,
           ...(gender && { gender }),
+          ...(preferImages && { preferImages }),
+          ...(explain && source === "store" && { explain }),
           ...(query.trim() && { query: query.trim() }),
           ...(budget && Number.isFinite(rupees) && rupees > 0 && { budget: Math.round(rupees * 100) }),
           ...(occasion && { occasion }),
+          ...(occasion === "other" && { occasionDetails: occasionDetails.trim() }),
           ...(city.trim() && startDate && { city: city.trim(), startDate, ...(endDate && { endDate }) }),
         }),
       );
@@ -113,12 +102,28 @@ export function StylistView() {
             <Select value={occasion} onChange={(e) => setOccasion(e.target.value)}>
               <option value="">Let the stylist decide</option>
               {OCCASIONS.map((o) => <option key={o} value={o}>{o[0]!.toUpperCase() + o.slice(1)}</option>)}
+              <option value="other">Other (describe it)</option>
             </Select>
           </Field>
+          {occasion === "other" ? (
+            <Field label="Describe the occasion" hint='For example: "college farewell, semi-formal, outdoors in the evening".' className="col-span-2">
+              <textarea className="input min-h-20 py-2" value={occasionDetails} onChange={(e) => setOccasionDetails(e.target.value)} maxLength={300} required />
+            </Field>
+          ) : null}
           <Field label="Where"><Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={80} placeholder="Goa" /></Field>
           <Field label="From"><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></Field>
           <Field label="To" className="col-start-2"><Input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} /></Field>
         </div>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+          <input type="checkbox" checked={preferImages} onChange={(e) => setPreferImages(e.target.checked)} />
+          <span>Show products with photos first</span>
+        </label>
+        {source === "store" ? (
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+            <input type="checkbox" checked={explain} onChange={(e) => setExplain(e.target.checked)} />
+            <span>Add a short note from the stylist <span className="text-foreground/60">(a few seconds slower)</span></span>
+          </label>
+        ) : null}
         <FormError message={error} />
         <Button type="submit" variant="primary" disabled={busy}>{busy ? "Styling..." : "Suggest outfits"}</Button>
       </form>
@@ -129,15 +134,16 @@ export function StylistView() {
         ) : (
           <div className="flex flex-col gap-8">
             <p className="m-0 text-sm text-foreground/70">
-              {result.occasion[0]!.toUpperCase() + result.occasion.slice(1)}
+              {occasion === "other" ? "Your occasion" : result.occasion[0]!.toUpperCase() + result.occasion.slice(1)}
               {result.place ? ` · ${result.place}` : ""}
               {result.weather ? ` · ${result.weather.minC}–${result.weather.maxC}°C${result.weather.rainyDays ? `, rain on ${result.weather.rainyDays} day${result.weather.rainyDays > 1 ? "s" : ""}` : ""}` : ""}
               {result.budget ? ` · up to ${formatInr(result.budget)}` : ""}
             </p>
+            {result.summary ? <p className="m-0 max-w-[65ch] text-base">{result.summary}</p> : null}
             {result.notes.map((n) => <Notice key={n} tone="amber">{n}</Notice>)}
             {result.store.length ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-x-4 gap-y-8">
-                {result.store.map((s) => <ProductLink key={s.id} s={s} />)}
+                {result.store.map((s) => <ProductLink key={s.id} s={s} feedback />)}
               </div>
             ) : null}
             {result.outfits.map((outfit, n) => (

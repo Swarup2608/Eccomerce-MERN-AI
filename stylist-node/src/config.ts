@@ -16,5 +16,5 @@ export const config = {
   llmTimeoutMs: Number(process.env.STYLIST_LLM_TIMEOUT_MS ?? 20_000),
   // How often new or edited products are embedded for semantic search; 0 turns it off (npm run embed still works).
   reindexMinutes: Number(process.env.STYLIST_REINDEX_MINUTES ?? 15),
-  storefrontUrl: process.env.STOREFRONT_URL ?? "http://localhost:3000",
+  storefrontUrl: process.env.STOREFRONT_URL ?? "https://ecommerce.mnsswarup.dev",
 };

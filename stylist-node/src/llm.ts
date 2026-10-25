@@ -8,9 +8,11 @@ export interface ToolCall { function: { name: string; arguments: Record<string, 
 export interface ChatMessage { role: "system" | "user" | "assistant" | "tool"; content: string; tool_calls?: ToolCall[]; tool_name?: string }
 export interface ToolSpec { type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } }
 
-async function post<T>(path: string, body: unknown, timeoutMs: number): Promise<T> {
+async function post<T>(path: string, body: unknown, timeoutMs: number, baseUrl = config.ollamaUrl): Promise<T> {
+  // The key only goes to the chat server; a separate embed server is assumed to be local or private.
+  const auth: Record<string, string> = config.ollamaApiKey && baseUrl === config.ollamaUrl ? { authorization: `Bearer ${config.ollamaApiKey}` } : {};
   try {
-    const res = await fetch(`${config.ollamaUrl}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
+    const res = await fetch(`${baseUrl}${path}`, { method: "POST", headers: { "content-type": "application/json", ...auth }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) throw new LlmError(`ollama returned ${res.status}`);
     return (await res.json()) as T;
   } catch (err) {
@@ -38,7 +40,7 @@ export async function chat(opts: { messages: ChatMessage[]; tools?: ToolSpec[]; 
 }
 
 export async function embed(texts: string[], timeoutMs = 30_000): Promise<number[][]> {
-  const r = await timed("llm.embed", () => post<{ embeddings: number[][] }>("/api/embed", { model: config.embedModel, input: texts }, timeoutMs));
+  const r = await timed("llm.embed", () => post<{ embeddings: number[][] }>("/api/embed", { model: config.embedModel, input: texts }, timeoutMs, config.ollamaEmbedUrl));
   if (!Array.isArray(r.embeddings) || r.embeddings.length !== texts.length) throw new LlmError("bad embedding response");
   return r.embeddings;
 }

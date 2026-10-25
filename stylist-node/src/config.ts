@@ -7,6 +7,10 @@ export const config = {
   accessCookie: process.env.STYLIST_ACCESS_COOKIE ?? "localhost-user-access-token",
   // Local Ollama: no API fees. If it is down or slow, every feature falls back to the rule-based path.
   ollamaUrl: process.env.OLLAMA_URL ?? "http://localhost:11434",
+  // Set for Ollama Cloud (OLLAMA_URL=https://ollama.com); sent as a Bearer token. Empty for a local server.
+  ollamaApiKey: process.env.OLLAMA_API_KEY ?? "",
+  // Ollama Cloud hosts no embedding models, so embeddings can point at a different server than chat.
+  ollamaEmbedUrl: process.env.OLLAMA_EMBED_URL || (process.env.OLLAMA_URL ?? "http://localhost:11434"),
   chatModel: process.env.STYLIST_CHAT_MODEL ?? "qwen3:4b-instruct",
   embedModel: process.env.STYLIST_EMBED_MODEL ?? "nomic-embed-text",
   llmTimeoutMs: Number(process.env.STYLIST_LLM_TIMEOUT_MS ?? 20_000),

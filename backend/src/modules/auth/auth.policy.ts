@@ -16,13 +16,16 @@ export interface ScopePolicy {
   // Narrow cookie paths keep each token off requests that don't need it.
   accessPath: string;
   refreshPath: string;
+  // Set only to share the access cookie with sibling subdomains (the stylist); the refresh cookie stays host-only.
+  accessDomain?: string;
 }
 
 export const MAX_SESSION_TTL_SEC = 30 * 24 * 60 * 60;
 
 // The __Secure- prefix makes browsers refuse the cookie unless it was set over HTTPS with the Secure flag.
 // Names say which site set them: localhost when NODE_ENV=development, else ecommerce.mnsswarup.dev / admin.ecommerce.mnsswarup.dev.
-export function scopePolicies(secureCookies: boolean, env: NodeEnv): Record<AuthScope, ScopePolicy> {
+// userCookieDomain widens only the shopper access cookie; admin cookies always stay on the API host.
+export function scopePolicies(secureCookies: boolean, env: NodeEnv, userCookieDomain?: string): Record<AuthScope, ScopePolicy> {
   const prefix = secureCookies ? "__Secure-" : "";
   const isLocal = env === "development";
   const user = `${prefix}${isLocal ? "localhost-user" : "ecommerce-user"}`;
@@ -38,6 +41,7 @@ export function scopePolicies(secureCookies: boolean, env: NodeEnv): Record<Auth
       refreshCookie: `${user}-refresh-token`,
       accessPath: "/api/v1",
       refreshPath: "/api/v1/auth",
+      ...(userCookieDomain && { accessDomain: userCookieDomain }),
     },
     admin: {
       scope: "admin",

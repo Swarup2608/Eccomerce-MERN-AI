@@ -49,7 +49,7 @@ async function init(): Promise<Runtime> {
   const mailer = createMailer(config, logger);
   const authService = new AuthService({
     redis,
-    policies: scopePolicies(config.auth.secureCookies, config.env),
+    policies: scopePolicies(config.auth.secureCookies, config.env, config.auth.cookieDomain),
     secrets: { user: config.auth.accessTokenSecret, admin: config.auth.adminAccessTokenSecret },
     storefrontUrl: config.storefrontUrl,
     adminUrl: config.adminUrl,

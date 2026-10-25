@@ -34,6 +34,7 @@ const envSchema = z
     STOREFRONT_URL: originSchema,
     ADMIN_URL: originSchema,
     API_PUBLIC_URL: originSchema.optional(),
+    COOKIE_DOMAIN: z.string().trim().toLowerCase().regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/, "must be a bare domain like ecommerce.example.com (no scheme, port or leading dot)").optional(),
     SMTP_HOST: z.string().trim().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
     SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
@@ -72,6 +73,11 @@ const envSchema = z
       const set = group.filter((name) => Boolean(env[name]));
       if (set.length > 0 && set.length < group.length) ctx.addIssue({ code: "custom", path: [group.find((name) => !env[name]) ?? group[0]], message: `${group.join(", ")} must be set together` });
     }
+    // Browsers drop a cookie whose Domain doesn't cover the host that set it, which would sign every shopper out.
+    if (env.COOKIE_DOMAIN && env.API_PUBLIC_URL) {
+      const apiHost = new URL(env.API_PUBLIC_URL).hostname;
+      if (apiHost !== env.COOKIE_DOMAIN && !apiHost.endsWith(`.${env.COOKIE_DOMAIN}`)) ctx.addIssue({ code: "custom", path: ["COOKIE_DOMAIN"], message: `must be ${apiHost} or a parent of it` });
+    }
     if (env.ACCESS_TOKEN_SECRET === env.ADMIN_ACCESS_TOKEN_SECRET) {
       ctx.addIssue({ code: "custom", path: ["ADMIN_ACCESS_TOKEN_SECRET"], message: "must differ from ACCESS_TOKEN_SECRET" });
     }
@@ -90,7 +96,7 @@ export interface AppConfig {
   trustProxy: number;
   logLevel: LogLevel;
   rateLimit: { windowMs: number; max: number };
-  auth: { accessTokenSecret: string; adminAccessTokenSecret: string; secureCookies: boolean };
+  auth: { accessTokenSecret: string; adminAccessTokenSecret: string; secureCookies: boolean; cookieDomain?: string | undefined };
   adminAllowedIps: readonly string[];
   apiPublicUrl: string | undefined;
   mail: { host: string | undefined; port: number; secure: boolean; user: string | undefined; pass: string | undefined; from: string };
@@ -169,7 +175,7 @@ export function loadConfig(): AppConfig {
     trustProxy: env.TRUST_PROXY ?? 0,
     logLevel: env.LOG_LEVEL,
     rateLimit: Object.freeze({ windowMs: env.RATE_LIMIT_WINDOW_MS, max: env.RATE_LIMIT_MAX }),
-    auth: Object.freeze({ accessTokenSecret: env.ACCESS_TOKEN_SECRET, adminAccessTokenSecret: env.ADMIN_ACCESS_TOKEN_SECRET, secureCookies: isProduction }),
+    auth: Object.freeze({ accessTokenSecret: env.ACCESS_TOKEN_SECRET, adminAccessTokenSecret: env.ADMIN_ACCESS_TOKEN_SECRET, secureCookies: isProduction, cookieDomain: env.COOKIE_DOMAIN }),
     adminAllowedIps: Object.freeze(env.ADMIN_ALLOWED_IPS),
     apiPublicUrl: env.API_PUBLIC_URL,
     mail: Object.freeze({ host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE, user: smtpUser, pass: env.SMTP_PASS || undefined, from: env.EMAIL_FROM ?? "Storefront <no-reply@localhost>" }),

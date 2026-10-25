@@ -282,6 +282,7 @@ Cash on Delivery is always available. To test Stripe webhooks locally:
 | `STYLIST_LLM_TIMEOUT_MS` | `20000` | Per-call timeout before falling back to rules |
 | `STYLIST_REINDEX_MINUTES` | `15` | How often new or edited products are embedded (`0` turns it off) |
 | `STYLIST_ACCESS_COOKIE` | `localhost-user-access-token` | The API's access cookie name (`__Secure-ecommerce-user-access-token` in production) |
+| `COOKIE_DOMAIN` (backend) | unset | Parent domain shared by the API and the stylist (e.g. `ecommerce.mnsswarup.dev`) so the stylist receives the access cookie. Unset keeps it on the API host only |
 | `NEXT_PUBLIC_STYLIST_URL` (storefront) | `http://localhost:4100` | Where the storefront reaches the stylist |
 
 ```bash

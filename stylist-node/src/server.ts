@@ -58,7 +58,8 @@ function cors(req: IncomingMessage, res: ServerResponse): boolean {
   return false;
 }
 
-const server = createServer(async (req, res) => {
+// Vercel (@vercel/node) calls this export per request and never runs listen().
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
     if (cors(req, res)) return;
     const path = (req.url ?? "").split("?")[0] ?? "";
@@ -102,8 +103,13 @@ const server = createServer(async (req, res) => {
     log("error", { message: err instanceof Error ? err.message : String(err) });
     send(res, 502, { error: "could not build suggestions right now" });
   }
-});
+}
 
-server.listen(config.port, () => console.log(`stylist-node on :${config.port}`));
-const stopIndex = startAutoIndex(config.reindexMinutes);
-for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { stopIndex(); server.close(() => void closeDb().then(() => process.exit(0))); });
+// Vercel sets VERCEL=1; anywhere else this runs as a long-lived server. Serverless instances freeze between requests,
+// so the background re-index only runs here (npm run embed covers a Vercel deployment).
+if (!process.env.VERCEL) {
+  const server = createServer(handler);
+  server.listen(config.port, () => console.log(`stylist-node on :${config.port}`));
+  const stopIndex = startAutoIndex(config.reindexMinutes);
+  for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { stopIndex(); server.close(() => void closeDb().then(() => process.exit(0))); });
+}
